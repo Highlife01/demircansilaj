@@ -1,0 +1,42 @@
+{
+  "name": "Demircan Silaj",
+  "short_name": "Demircan Silaj",
+  "description": "Premium Mısır Silajı ve Kaba Yem Sipariş Platformu",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#14532d",
+  "theme_color": "#15803d",
+  "orientation": "portrait",
+  "categories": ["business", "food", "shopping", "agriculture"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Sipariş Ver",
+      "short_name": "Sipariş",
+      "description": "Hızlı fiyat teklifi ve sipariş formu",
+      "url": "/iletisim-ve-siparis"
+    },
+    {
+      "name": "Ürünlerimiz",
+      "short_name": "Ürünler",
+      "description": "Silaj ürünleri ve fiyatları",
+      "url": "/urunlerimiz"
+    },
+    {
+      "name": "Yönetim Paneli",
+      "short_name": "Panel",
+      "description": "Sipariş ve mesaj yönetimi",
+      "url": "/admin"
+    }
+  ]
+}

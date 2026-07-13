@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.superAdmin == true ||
+        request.auth.token.email == "cebrailkara@gmail.com"
+      );
+    }
+
+    // Demircan Silaj yöneticileri (info@demircansilaj.com.tr ve süper admin).
+    function isDemircanAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == 'UdCPCS1A2aby7sj5bR0Exwxgg2R2' ||
+        request.auth.uid == 'VdkScnrMiWYyv9Q5h9mSUT56YkU2'
+      );
+    }
+
+    // Public read collections used by portal + dashboard.
+    match /news/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /bot_runs/{document=**} {
+      allow read: if isSuperAdmin();
+      // Bot writes with Admin SDK (service account), not client SDK.
+      allow write: if false;
+    }
+
+    match /market_snapshots/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /siteContent/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /privateConfig/{document=**} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /ads/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /tags/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /gallery/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /videos/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /comments/{document=**} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    // Watchlist ve kullanıcı verileri — giriş yapan herkes kendi verisini okuyup yazabilir
+    match /user_data/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Contact/newsletter forms can submit without auth.
+    match /inbox/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    match /subscribers/{document=**} {
+      allow create, update: if true;
+      allow read, delete: if isSuperAdmin();
+    }
+
+    // Ziyaretçi takibi: herkes bir oturumda bir kez yazabilir; sadece admin okuyabilir (ajansonline benzeri).
+    match /visitor_sessions/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // Beğeni (tepki): herkes okuyabilir, ekleyebilir ve kendi beğenisini kaldırabilir (sessionId ile).
+    match /reactions/{document=**} {
+      allow read, create: if true;
+      allow delete: if true;
+    }
+
+    match /visitor_hits/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    match /halka_arz/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /companies/{document=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // Company submissions: public can create, admin can read/write
+    match /company_submissions/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // ============================================================
+    // DEMİRCAN SİLAJ — Sipariş & İletişim (bu proje paylaşımlıdır)
+    // ============================================================
+
+    // Siparişler: herkes oluşturabilir (public form), sadece Demircan admini okur/yönetir.
+    match /demircan_orders/{orderId} {
+      allow create: if request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 40
+        && request.resource.data.quantity is number
+        && request.resource.data.status == 'new';
+      allow read, update, delete: if isDemircanAdmin() || isSuperAdmin();
+    }
+
+    // İletişim mesajları: herkes oluşturabilir, sadece Demircan admini okur/yönetir.
+    match /demircan_messages/{messageId} {
+      allow create: if request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.status == 'new';
+      allow read, update, delete: if isDemircanAdmin() || isSuperAdmin();
+    }
+
+    // Deny every other path by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
