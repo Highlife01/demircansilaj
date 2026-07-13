@@ -21,4 +21,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://demircansilaj.com.tr/sitemap.xml
+Sitemap: https://www.demircansilaj.com.tr/sitemap.xml
