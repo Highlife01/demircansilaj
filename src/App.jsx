@@ -103,8 +103,9 @@ export default function App() {
   // Routing popstate and navigation handlers
   useEffect(() => {
     // Canonical Domain Redirect (SEO Best Practice)
-    if (window.location.hostname === 'demircansilaj.firebaseapp.com') {
-      window.location.replace('https://demircansilaj.web.app' + window.location.pathname + window.location.search);
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    if (isProduction && window.location.hostname !== 'www.demircansilaj.com.tr') {
+      window.location.replace('https://www.demircansilaj.com.tr' + window.location.pathname + window.location.search);
       return;
     }
 
