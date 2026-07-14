@@ -5,10 +5,11 @@ import {
   doc, updateDoc, deleteDoc, writeBatch,
 } from 'firebase/firestore';
 import {
-  Leaf, LogOut, Package, MessageSquare, TrendingUp, Bell,
+  LogOut, Package, MessageSquare, TrendingUp, Bell,
   Phone, MapPin, Mail, Trash2, Search, Clock, CheckCircle2,
   PhoneCall, Loader2, Inbox, User, Weight, Banknote,
   Download, CheckCheck, Filter, BellRing, StickyNote,
+  Activity, Radio, Zap, Satellite,
 } from 'lucide-react';
 import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION } from '../firebase';
 import DashboardCharts from './DashboardCharts';
@@ -42,10 +43,10 @@ function downloadCsv(filename, rows) {
 }
 
 const ORDER_STATUS = {
-  new: { label: 'Yeni', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-  contacted: { label: 'İletişime Geçildi', className: 'bg-amber-100 text-amber-700 border-amber-200' },
-  completed: { label: 'Tamamlandı', className: 'bg-green-100 text-green-700 border-green-200' },
-  cancelled: { label: 'İptal', className: 'bg-red-100 text-red-700 border-red-200' },
+  new: { label: 'Yeni', className: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
+  contacted: { label: 'İletişime Geçildi', className: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  completed: { label: 'Tamamlandı', className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  cancelled: { label: 'İptal', className: 'bg-red-500/15 text-red-300 border-red-500/30' },
 };
 
 function formatDate(ts) {
@@ -56,15 +57,25 @@ function formatDate(ts) {
   });
 }
 
-function StatCard({ icon, label, value, accent }) {
+// Göreli zaman: "az önce", "3 dk önce", "2 sa önce"...
+function timeAgo(ts) {
+  if (!ts?.toDate) return '';
+  const diff = (Date.now() - ts.toDate().getTime()) / 1000;
+  if (diff < 60) return 'az önce';
+  if (diff < 3600) return `${Math.floor(diff / 60)} dk önce`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} sa önce`;
+  return `${Math.floor(diff / 86400)} gün önce`;
+}
+
+function StatCard({ icon, label, value, accent, glow }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+    <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5 flex items-center gap-4 ${glow}`}>
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-extrabold text-gray-900 leading-tight truncate">{value}</p>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">{label}</p>
+        <p className="text-2xl font-extrabold text-white leading-tight truncate tabular-nums">{value}</p>
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">{label}</p>
       </div>
     </div>
   );
@@ -79,9 +90,16 @@ export default function AdminDashboard({ user }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [notifyPerm, setNotifyPerm] = useState(getNotifyPermission());
+  const [now, setNow] = useState(new Date());
 
   const firstOrdersLoad = useRef(true);
   const firstMessagesLoad = useRef(true);
+
+  // Canlı saat (komuta merkezi hissi + göreli zamanların tazelenmesi).
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const qOrders = query(collection(db, ORDERS_COLLECTION), orderBy('createdAt', 'desc'));
@@ -135,7 +153,19 @@ export default function AdminDashboard({ user }) {
     const revenue = orders
       .filter((o) => o.status !== 'cancelled')
       .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-    return { newOrders, newMessages, revenue, totalOrders: orders.length, totalMessages: messages.length };
+    const isToday = (ts) => ts?.toDate && ts.toDate().toDateString() === new Date().toDateString();
+    const todayCount = orders.filter((o) => isToday(o.createdAt)).length + messages.filter((m) => isToday(m.createdAt)).length;
+    return { newOrders, newMessages, revenue, totalOrders: orders.length, totalMessages: messages.length, todayCount };
+  }, [orders, messages]);
+
+  // Birleşik canlı akış: sipariş + mesajlar kronolojik (en yeni önce).
+  const feed = useMemo(() => {
+    const o = orders.map((x) => ({ ...x, _kind: 'order' }));
+    const m = messages.map((x) => ({ ...x, _kind: 'message' }));
+    return [...o, ...m]
+      .filter((x) => x.createdAt?.toDate)
+      .sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate())
+      .slice(0, 12);
   }, [orders, messages]);
 
   // Okunmamış toplamını tarayıcı sekmesi başlığında göster.
@@ -216,40 +246,63 @@ export default function AdminDashboard({ user }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 antialiased">
-      {/* Top bar */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center">
-            <Leaf className="h-7 w-7 text-green-600 mr-2" />
-            <div>
-              <span className="text-lg font-bold text-gray-900 tracking-tight block leading-none">
-                DEMİRCAN <span className="text-green-600">SİLAJ</span>
+    <div className="min-h-screen bg-[#070b14] text-gray-200 antialiased relative overflow-x-hidden">
+      {/* Uzay üssü arka planı: radyal parıltılar + ızgara */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(16,185,129,0.18),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(6,182,212,0.14),transparent_45%)]" />
+        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] bg-[size:44px_44px]" />
+      </div>
+
+      {/* Komuta çubuğu */}
+      <header className="relative z-30 sticky top-0 bg-[#070b14]/80 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <Satellite className="h-5 w-5 text-emerald-400" />
+              </div>
+              <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
               </span>
-              <span className="text-[11px] text-gray-400 font-medium">Yönetim Paneli</span>
+            </div>
+            <div>
+              <span className="text-base font-bold text-white tracking-tight block leading-none">
+                DEMİRCAN <span className="text-emerald-400">SİLAJ</span>
+              </span>
+              <span className="text-[10px] text-cyan-300/70 font-semibold uppercase tracking-[0.2em]">Komuta Merkezi</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Canlı bağlantı + saat */}
+            <div className="hidden sm:flex items-center gap-2 text-xs font-mono bg-white/[0.04] border border-white/10 rounded-full px-3.5 py-2">
+              <Radio className={`h-3.5 w-3.5 ${loading ? 'text-amber-400' : 'text-emerald-400 animate-pulse'}`} />
+              <span className={loading ? 'text-amber-300' : 'text-emerald-300'}>{loading ? 'BAĞLANIYOR' : 'CANLI'}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-gray-300 tabular-nums">{now.toLocaleTimeString('tr-TR')}</span>
+            </div>
+
             {notifyPerm !== 'granted' && notifyPerm !== 'unsupported' && (
               <button
                 onClick={enableNotifications}
                 title="Yeni sipariş/mesaj bildirimlerini aç"
-                className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 rounded-full px-4 py-2 transition-colors"
+                className="flex items-center gap-2 text-sm font-semibold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-full px-3.5 py-2 transition-colors"
               >
-                <BellRing className="h-4 w-4" /> <span className="hidden sm:inline">Bildirimleri Aç</span>
+                <BellRing className="h-4 w-4" /> <span className="hidden md:inline">Bildirim</span>
               </button>
             )}
             {notifyPerm === 'granted' && (
-              <span title="Bildirimler açık" className="hidden sm:flex items-center gap-2 text-sm font-semibold text-green-600 bg-green-50 border border-green-100 rounded-full px-4 py-2">
-                <BellRing className="h-4 w-4" /> Bildirim açık
+              <span title="Bildirimler açık" className="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3.5 py-2">
+                <BellRing className="h-4 w-4" />
               </span>
             )}
-            <span className="hidden sm:flex items-center text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-full px-4 py-2">
-              <User className="h-4 w-4 mr-2 text-gray-400" /> {user?.email}
+            <span className="hidden lg:flex items-center text-sm text-gray-400 bg-white/[0.04] border border-white/10 rounded-full px-4 py-2">
+              <User className="h-4 w-4 mr-2 text-gray-500" /> {user?.email}
             </span>
             <button
               onClick={() => signOut(auth)}
-              className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-red-600 bg-gray-50 hover:bg-red-50 border border-gray-100 hover:border-red-100 rounded-full px-4 py-2 transition-colors"
+              className="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-red-300 bg-white/[0.04] hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 rounded-full px-3.5 py-2 transition-colors"
             >
               <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Çıkış</span>
             </button>
@@ -257,45 +310,55 @@ export default function AdminDashboard({ user }) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={<Package className="h-6 w-6 text-green-600" />} accent="bg-green-50" label="Toplam Sipariş" value={stats.totalOrders} />
-          <StatCard icon={<Bell className="h-6 w-6 text-blue-600" />} accent="bg-blue-50" label="Yeni Sipariş" value={stats.newOrders} />
-          <StatCard icon={<MessageSquare className="h-6 w-6 text-amber-600" />} accent="bg-amber-50" label="Yeni Mesaj" value={stats.newMessages} />
-          <StatCard icon={<TrendingUp className="h-6 w-6 text-purple-600" />} accent="bg-purple-50" label="Tahmini Ciro" value={`${stats.revenue.toLocaleString('tr-TR')} ₺`} />
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Göstergeler */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+          <StatCard icon={<Zap className="h-6 w-6 text-cyan-300" />} accent="bg-cyan-500/15 border border-cyan-500/20" glow="shadow-[0_0_25px_-8px_rgba(6,182,212,0.5)]" label="Bugün" value={stats.todayCount} />
+          <StatCard icon={<Package className="h-6 w-6 text-emerald-300" />} accent="bg-emerald-500/15 border border-emerald-500/20" label="Toplam Sipariş" value={stats.totalOrders} />
+          <StatCard icon={<Bell className="h-6 w-6 text-blue-300" />} accent="bg-blue-500/15 border border-blue-500/20" label="Yeni Sipariş" value={stats.newOrders} />
+          <StatCard icon={<MessageSquare className="h-6 w-6 text-amber-300" />} accent="bg-amber-500/15 border border-amber-500/20" label="Yeni Mesaj" value={stats.newMessages} />
+          <StatCard icon={<TrendingUp className="h-6 w-6 text-fuchsia-300" />} accent="bg-fuchsia-500/15 border border-fuchsia-500/20" label="Tahmini Ciro" value={`${stats.revenue.toLocaleString('tr-TR')} ₺`} />
         </div>
 
-        {/* Grafikler */}
-        {!loading && orders.length > 0 && <DashboardCharts orders={orders} />}
+        {/* Canlı akış + grafikler */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
+          <div className="xl:col-span-1">
+            <LiveFeed feed={feed} onOpenOrder={setSelectedOrder} onGoMessages={() => setTab('messages')} />
+          </div>
+          <div className="xl:col-span-2">
+            {!loading && orders.length > 0
+              ? <DashboardCharts orders={orders} />
+              : <div className="h-full rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-gray-500 text-sm py-16">Grafikler için henüz yeterli veri yok.</div>}
+          </div>
+        </div>
 
-        {/* Tabs + Search */}
+        {/* Sekmeler + Arama */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex bg-white border border-gray-100 rounded-xl p-1 shadow-sm w-fit">
+          <div className="flex bg-white/[0.04] border border-white/10 rounded-xl p-1 w-fit">
             <button
               onClick={() => setTab('orders')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'orders' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'orders' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
               <Package className="h-4 w-4" /> Siparişler
-              {stats.newOrders > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === 'orders' ? 'bg-white/25' : 'bg-blue-100 text-blue-700'}`}>{stats.newOrders}</span>}
+              {stats.newOrders > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === 'orders' ? 'bg-black/20' : 'bg-cyan-500/20 text-cyan-300'}`}>{stats.newOrders}</span>}
             </button>
             <button
               onClick={() => setTab('messages')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'messages' ? 'bg-green-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'messages' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
               <MessageSquare className="h-4 w-4" /> Mesajlar
-              {stats.newMessages > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === 'messages' ? 'bg-white/25' : 'bg-amber-100 text-amber-700'}`}>{stats.newMessages}</span>}
+              {stats.newMessages > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === 'messages' ? 'bg-black/20' : 'bg-amber-500/20 text-amber-300'}`}>{stats.newMessages}</span>}
             </button>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {tab === 'orders' && (
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm font-medium text-gray-700 cursor-pointer"
+                  className="appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-medium text-gray-200 cursor-pointer [&>option]:bg-[#0b1220]"
                 >
                   {ORDER_STATUS_FILTERS.map((f) => (
                     <option key={f.value} value={f.value}>{f.label}</option>
@@ -307,35 +370,35 @@ export default function AdminDashboard({ user }) {
             {tab === 'messages' && stats.newMessages > 0 && (
               <button
                 onClick={markAllMessagesRead}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors"
               >
-                <CheckCheck className="h-4 w-4 text-green-600" /> Tümünü okundu
+                <CheckCheck className="h-4 w-4 text-emerald-400" /> Tümünü okundu
               </button>
             )}
 
             <button
               onClick={exportCurrent}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors"
             >
-              <Download className="h-4 w-4 text-green-600" /> CSV
+              <Download className="h-4 w-4 text-emerald-400" /> CSV
             </button>
 
             <div className="relative sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Ara: isim, telefon, il..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm"
               />
             </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-gray-400">
-            <Loader2 className="h-6 w-6 animate-spin mr-3" /> Yükleniyor...
+          <div className="flex items-center justify-center py-24 text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin mr-3" /> Sinyal alınıyor...
           </div>
         ) : tab === 'orders' ? (
           <OrdersList orders={filteredOrders} onStatus={setOrderStatus} onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} onOpen={setSelectedOrder} />
@@ -356,9 +419,58 @@ export default function AdminDashboard({ user }) {
   );
 }
 
+// Birleşik canlı akış paneli — sipariş + iletişim mesajları gerçek zamanlı.
+function LiveFeed({ feed, onOpenOrder, onGoMessages }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl h-full flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4.5 w-4.5 text-emerald-400" />
+          <h3 className="font-bold text-white text-sm tracking-wide">CANLI AKIŞ</h3>
+        </div>
+        <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-300">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> REALTIME
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto max-h-[360px] divide-y divide-white/5">
+        {feed.length === 0 && (
+          <div className="py-16 text-center text-gray-500 text-sm">Akış bekleniyor…</div>
+        )}
+        {feed.map((item) => {
+          const isOrder = item._kind === 'order';
+          const isNew = item.status === 'new';
+          return (
+            <button
+              key={item._kind + item.id}
+              onClick={() => (isOrder ? onOpenOrder(item) : onGoMessages())}
+              className="w-full text-left px-5 py-3.5 flex items-start gap-3 hover:bg-white/[0.04] transition-colors"
+            >
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isOrder ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'}`}>
+                {isOrder ? <Package className="h-4.5 w-4.5" /> : <MessageSquare className="h-4.5 w-4.5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white truncate">{item.name || (isOrder ? 'Sipariş' : 'Mesaj')}</span>
+                  {isNew && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />}
+                </div>
+                <p className="text-xs text-gray-400 truncate">
+                  {isOrder
+                    ? `${item.quantity || ''} Ton · ${item.productName || item.productType || ''}`
+                    : (item.message || '').slice(0, 60)}
+                </p>
+              </div>
+              <span className="text-[10px] text-gray-500 font-mono shrink-0 mt-0.5">{timeAgo(item.createdAt)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ icon, text }) {
   return (
-    <div className="bg-white rounded-2xl border border-dashed border-gray-200 py-20 flex flex-col items-center justify-center text-gray-400">
+    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-20 flex flex-col items-center justify-center text-gray-500">
       {icon}
       <p className="mt-4 text-sm font-medium">{text}</p>
     </div>
@@ -373,56 +485,56 @@ function OrdersList({ orders, onStatus, onDelete, onOpen }) {
       {orders.map((o) => {
         const st = ORDER_STATUS[o.status] || ORDER_STATUS.new;
         return (
-          <div key={o.id} className={`bg-white rounded-2xl border shadow-sm p-5 ${o.status === 'new' ? 'border-blue-200 ring-1 ring-blue-100' : 'border-gray-100'}`}>
+          <div key={o.id} className={`rounded-2xl border bg-white/[0.03] backdrop-blur-xl p-5 transition-colors ${o.status === 'new' ? 'border-cyan-500/30 shadow-[0_0_24px_-10px_rgba(6,182,212,0.6)]' : 'border-white/10'}`}>
             <div className="flex items-start justify-between gap-3 mb-4">
               <button onClick={() => onOpen(o)} className="flex items-center gap-3 min-w-0 text-left group">
-                <div className="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                  <User className="h-5 w-5 text-green-600" />
+                <div className="w-11 h-11 rounded-full bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <User className="h-5 w-5 text-emerald-300" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-gray-900 truncate group-hover:text-green-700 transition-colors">{o.name || 'İsimsiz'}</p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(o.createdAt)}</p>
+                  <p className="font-bold text-white truncate group-hover:text-emerald-300 transition-colors">{o.name || 'İsimsiz'}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(o.createdAt)}</p>
                 </div>
               </button>
               <div className="flex items-center gap-1.5 shrink-0">
-                {o.adminNote && <StickyNote className="h-4 w-4 text-amber-500" title="İç not var" />}
+                {o.adminNote && <StickyNote className="h-4 w-4 text-amber-400" title="İç not var" />}
                 <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${st.className}`}>{st.label}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <a href={`tel:${o.phone}`} className="flex items-center gap-2 text-gray-700 hover:text-green-700 min-w-0">
-                <Phone className="h-4 w-4 text-gray-400 shrink-0" /> <span className="truncate">{o.phone || '—'}</span>
+              <a href={`tel:${o.phone}`} className="flex items-center gap-2 text-gray-300 hover:text-emerald-300 min-w-0">
+                <Phone className="h-4 w-4 text-gray-500 shrink-0" /> <span className="truncate">{o.phone || '—'}</span>
               </a>
-              <div className="flex items-center gap-2 text-gray-700 min-w-0">
-                <MapPin className="h-4 w-4 text-gray-400 shrink-0" /> <span className="truncate">{o.location || '—'}</span>
+              <div className="flex items-center gap-2 text-gray-300 min-w-0">
+                <MapPin className="h-4 w-4 text-gray-500 shrink-0" /> <span className="truncate">{o.location || '—'}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-700 min-w-0 col-span-2">
-                <Package className="h-4 w-4 text-gray-400 shrink-0" /> <span className="truncate">{o.productName || o.productType}</span>
+              <div className="flex items-center gap-2 text-gray-300 min-w-0 col-span-2">
+                <Package className="h-4 w-4 text-gray-500 shrink-0" /> <span className="truncate">{o.productName || o.productType}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-700">
-                <Weight className="h-4 w-4 text-gray-400 shrink-0" /> {o.quantity} Ton
+              <div className="flex items-center gap-2 text-gray-300">
+                <Weight className="h-4 w-4 text-gray-500 shrink-0" /> {o.quantity} Ton
               </div>
-              <div className="flex items-center gap-2 font-bold text-green-700">
-                <Banknote className="h-4 w-4 text-green-500 shrink-0" /> {(o.totalPrice || 0).toLocaleString('tr-TR')} ₺
+              <div className="flex items-center gap-2 font-bold text-emerald-300">
+                <Banknote className="h-4 w-4 text-emerald-400 shrink-0" /> {(o.totalPrice || 0).toLocaleString('tr-TR')} ₺
               </div>
             </div>
 
             {o.notes && (
-              <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-600 mb-4 leading-relaxed">
+              <div className="bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-400 mb-4 leading-relaxed">
                 {o.notes}
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-50">
+            <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/5">
               <div className="flex items-center gap-1.5">
-                <button onClick={() => onStatus(o.id, 'contacted')} title="İletişime geçildi" className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"><PhoneCall className="h-4 w-4" /></button>
-                <button onClick={() => onStatus(o.id, 'completed')} title="Tamamlandı" className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"><CheckCircle2 className="h-4 w-4" /></button>
-                <a href={`https://wa.me/${(o.phone || '').replace(/\D/g, '').replace(/^0/, '90')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"><MessageSquare className="h-4 w-4" /></a>
+                <button onClick={() => onStatus(o.id, 'contacted')} title="İletişime geçildi" className="p-2 rounded-lg text-amber-400 hover:bg-amber-500/10 transition-colors"><PhoneCall className="h-4 w-4" /></button>
+                <button onClick={() => onStatus(o.id, 'completed')} title="Tamamlandı" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"><CheckCircle2 className="h-4 w-4" /></button>
+                <a href={`https://wa.me/${(o.phone || '').replace(/\D/g, '').replace(/^0/, '90')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"><MessageSquare className="h-4 w-4" /></a>
               </div>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => onOpen(o)} className="text-xs font-semibold text-gray-600 hover:text-green-700 bg-gray-50 hover:bg-green-50 px-3 py-2 rounded-lg transition-colors">Detay</button>
-                <button onClick={() => onDelete(o.id)} title="Sil" className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => onOpen(o)} className="text-xs font-semibold text-gray-300 hover:text-emerald-300 bg-white/[0.04] hover:bg-emerald-500/10 px-3 py-2 rounded-lg transition-colors">Detay</button>
+                <button onClick={() => onDelete(o.id)} title="Sil" className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
           </div>
@@ -438,33 +550,33 @@ function MessagesList({ messages, onRead, onDelete }) {
   return (
     <div className="space-y-3">
       {messages.map((m) => (
-        <div key={m.id} className={`bg-white rounded-2xl border shadow-sm p-5 ${m.status === 'new' ? 'border-amber-200 ring-1 ring-amber-100' : 'border-gray-100'}`}>
+        <div key={m.id} className={`rounded-2xl border bg-white/[0.03] backdrop-blur-xl p-5 ${m.status === 'new' ? 'border-amber-500/30 shadow-[0_0_24px_-10px_rgba(245,158,11,0.6)]' : 'border-white/10'}`}>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-                <MessageSquare className="h-5 w-5 text-amber-600" />
+              <div className="w-11 h-11 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
+                <MessageSquare className="h-5 w-5 text-amber-300" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-gray-900 truncate flex items-center gap-2">
+                <p className="font-bold text-white truncate flex items-center gap-2">
                   {m.name || 'İsimsiz'}
-                  {m.status === 'new' && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">YENİ</span>}
+                  {m.status === 'new' && <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">YENİ</span>}
                 </p>
-                <p className="text-xs text-gray-400 flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(m.createdAt)}</p>
+                <p className="text-xs text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(m.createdAt)}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {m.status === 'new' && (
-                <button onClick={() => onRead(m.id)} title="Okundu işaretle" className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"><CheckCircle2 className="h-4 w-4" /></button>
+                <button onClick={() => onRead(m.id)} title="Okundu işaretle" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"><CheckCircle2 className="h-4 w-4" /></button>
               )}
-              <button onClick={() => onDelete(m.id)} title="Sil" className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => onDelete(m.id)} title="Sil" className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
 
-          <p className="text-sm text-gray-700 leading-relaxed mb-4 whitespace-pre-wrap">{m.message}</p>
+          <p className="text-sm text-gray-300 leading-relaxed mb-4 whitespace-pre-wrap">{m.message}</p>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm pt-3 border-t border-gray-50">
-            {m.phone && <a href={`tel:${m.phone}`} className="flex items-center gap-1.5 text-gray-600 hover:text-green-700"><Phone className="h-4 w-4 text-gray-400" /> {m.phone}</a>}
-            {m.email && <a href={`mailto:${m.email}`} className="flex items-center gap-1.5 text-gray-600 hover:text-green-700"><Mail className="h-4 w-4 text-gray-400" /> {m.email}</a>}
+          <div className="flex flex-wrap items-center gap-4 text-sm pt-3 border-t border-white/5">
+            {m.phone && <a href={`tel:${m.phone}`} className="flex items-center gap-1.5 text-gray-400 hover:text-emerald-300"><Phone className="h-4 w-4 text-gray-500" /> {m.phone}</a>}
+            {m.email && <a href={`mailto:${m.email}`} className="flex items-center gap-1.5 text-gray-400 hover:text-emerald-300"><Mail className="h-4 w-4 text-gray-500" /> {m.email}</a>}
           </div>
         </div>
       ))}

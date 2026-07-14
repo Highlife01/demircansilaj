@@ -61,10 +61,10 @@ export default function App() {
 
   // Product Pricing (per ton)
   const productPrices = {
-    '1000kg': 2650, // 1000 kg Vakumlu Mısır Silajı
-    '500kg': 2850,  // 500 kg Vakumlu Mısır Silajı
-    'dokme': 2350,  // Dökme Mısır Silajı
-    'diger': 2500   // Diğer (Yonca, Fiğ vb.)
+    '1000kg': 5500, // 1000 kg Vakumlu Mısır Silajı
+    '500kg': 5500,  // 500 kg Vakumlu Mısır Silajı
+    'dokme': 5500,  // Dökme Mısır Silajı
+    'diger': 5500   // Diğer (Yonca, Fiğ vb.)
   };
 
   const productNames = {
@@ -179,7 +179,7 @@ export default function App() {
             "offers": {
               "@type": "Offer",
               "priceCurrency": "TRY",
-              "price": "2650"
+              "price": "5500"
             }
           },
           {
@@ -190,7 +190,7 @@ export default function App() {
             "offers": {
               "@type": "Offer",
               "priceCurrency": "TRY",
-              "price": "2850"
+              "price": "5500"
             }
           }
         ]
@@ -206,8 +206,8 @@ export default function App() {
           "description": `${prov.name} genelinde hayvancılık rasyon ihtiyaçlarına özel, Adana fabrikamızdan ${prov.time} teslimatlı vakumlu ve dökme mısır silajı satışı.`,
           "offers": {
             "@type": "AggregateOffer",
-            "lowPrice": "2350",
-            "highPrice": "2850",
+            "lowPrice": "5500",
+            "highPrice": "5500",
             "priceCurrency": "TRY"
           }
         };
@@ -751,7 +751,7 @@ export default function App() {
               <div className="border-t border-gray-100 pt-6 mt-auto">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
-                  <span className="text-xl font-extrabold text-green-700">2.650 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
+                  <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
                 <button 
                   onClick={() => {
@@ -788,7 +788,7 @@ export default function App() {
               <div className="border-t border-gray-100 pt-6 mt-auto">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
-                  <span className="text-xl font-extrabold text-green-700">2.850 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
+                  <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
                 <button 
                   onClick={() => {
@@ -825,7 +825,7 @@ export default function App() {
               <div className="border-t border-gray-100 pt-6 mt-auto">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
-                  <span className="text-xl font-extrabold text-green-700">2.350 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
+                  <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
                 <button 
                   onClick={() => {
@@ -1065,10 +1065,10 @@ export default function App() {
                     value={formData.productType}
                     onChange={(e) => setFormData({...formData, productType: e.target.value})}
                   >
-                    <option value="1000kg">1000 kg Vakumlu Mısır Silajı (2.650 ₺/Ton)</option>
-                    <option value="500kg">500 kg Vakumlu Mısır Silajı (2.850 ₺/Ton)</option>
-                    <option value="dokme">Dökme Mısır Silajı (2.350 ₺/Ton)</option>
-                    <option value="diger">Diğer (Yonca, Fiğ vb.) (2.500 ₺/Ton)</option>
+                    <option value="1000kg">1000 kg Vakumlu Mısır Silajı (5.500 ₺/Ton)</option>
+                    <option value="500kg">500 kg Vakumlu Mısır Silajı (5.500 ₺/Ton)</option>
+                    <option value="dokme">Dökme Mısır Silajı (5.500 ₺/Ton)</option>
+                    <option value="diger">Diğer (Yonca, Fiğ vb.) (5.500 ₺/Ton)</option>
                   </select>
                 </div>
               </div>
@@ -1313,7 +1313,7 @@ export default function App() {
 
     // Logistics calculation
     const activeProv = provinces.find(p => p.id === selectedProvId) || provinces[0];
-    const baseProductPrice = 2650; // Premium 1000kg
+    const baseProductPrice = 5500; // Premium 1000kg
     const productCost = tonnageInput * baseProductPrice;
     
     // Shipping is: (distance * 2.2 ₺ per ton per km) with minimum shipping fee of 4000 ₺
@@ -1525,7 +1525,7 @@ export default function App() {
                 <div className="p-4 bg-white rounded-xl shadow-sm">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Ürün Bedeli</span>
                   <span className="text-lg font-extrabold text-gray-900 mt-1 block">{productCost.toLocaleString('tr-TR')} ₺</span>
-                  <span className="text-[9px] text-gray-400 block mt-0.5">(2.650 ₺/Ton)</span>
+                  <span className="text-[9px] text-gray-400 block mt-0.5">(5.500 ₺/Ton)</span>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Tahmini Nakliye</span>

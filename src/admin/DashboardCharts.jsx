@@ -34,27 +34,27 @@ function MonthlyChart({ orders }) {
   const data = useMonthly(orders);
   const maxCount = Math.max(1, ...data.map((d) => d.count));
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 h-full">
       <div className="flex items-center gap-2 mb-6">
-        <BarChart3 className="h-5 w-5 text-green-600" />
-        <h3 className="font-bold text-gray-900">Son 6 Ay — Sipariş Trendi</h3>
+        <BarChart3 className="h-5 w-5 text-emerald-400" />
+        <h3 className="font-bold text-white">Son 6 Ay — Sipariş Trendi</h3>
       </div>
       <div className="flex items-end justify-between gap-3 h-40">
         {data.map((d) => (
           <div key={d.key} className="flex-1 flex flex-col items-center justify-end h-full">
-            <span className="text-xs font-bold text-gray-700 mb-1">{d.count}</span>
+            <span className="text-xs font-bold text-gray-300 mb-1">{d.count}</span>
             <div
-              className="w-full max-w-[42px] rounded-t-lg bg-gradient-to-t from-green-500 to-green-400 transition-all"
+              className="w-full max-w-[42px] rounded-t-lg bg-gradient-to-t from-emerald-500 to-cyan-400 transition-all"
               style={{ height: `${(d.count / maxCount) * 100}%`, minHeight: d.count ? '6px' : '2px' }}
               title={`${d.count} sipariş • ${d.revenue.toLocaleString('tr-TR')} ₺`}
             />
-            <span className="text-[11px] font-semibold text-gray-400 mt-2">{d.label}</span>
+            <span className="text-[11px] font-semibold text-gray-500 mt-2">{d.label}</span>
           </div>
         ))}
       </div>
-      <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-xs">
-        <span className="text-gray-400 font-semibold uppercase tracking-wider">Son 6 ay cirosu</span>
-        <span className="font-extrabold text-green-700">
+      <div className="mt-4 pt-4 border-t border-white/5 flex justify-between text-xs">
+        <span className="text-gray-500 font-semibold uppercase tracking-wider">Son 6 ay cirosu</span>
+        <span className="font-extrabold text-emerald-300">
           {data.reduce((s, d) => s + d.revenue, 0).toLocaleString('tr-TR')} ₺
         </span>
       </div>
@@ -76,23 +76,23 @@ function ProductBreakdown({ orders }) {
   }, [orders]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 h-full">
       <div className="flex items-center gap-2 mb-6">
-        <PieChart className="h-5 w-5 text-purple-600" />
-        <h3 className="font-bold text-gray-900">Ürün Dağılımı</h3>
+        <PieChart className="h-5 w-5 text-fuchsia-400" />
+        <h3 className="font-bold text-white">Ürün Dağılımı</h3>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">Henüz veri yok.</p>
+        <p className="text-sm text-gray-500 py-8 text-center">Henüz veri yok.</p>
       ) : (
         <div className="space-y-4">
           {rows.map((r) => (
             <div key={r.name}>
               <div className="flex justify-between text-sm mb-1.5">
-                <span className="text-gray-700 font-medium truncate pr-2">{r.name}</span>
+                <span className="text-gray-300 font-medium truncate pr-2">{r.name}</span>
                 <span className="text-gray-500 font-semibold shrink-0">{r.count} • %{r.pct}</span>
               </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full" style={{ width: `${r.pct}%` }} />
+              <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-fuchsia-500 to-purple-400 rounded-full" style={{ width: `${r.pct}%` }} />
               </div>
             </div>
           ))}
@@ -119,23 +119,23 @@ function TopProvinces({ orders }) {
   }, [orders]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 h-full">
       <div className="flex items-center gap-2 mb-6">
-        <MapPin className="h-5 w-5 text-amber-600" />
-        <h3 className="font-bold text-gray-900">En Çok Talep — İl/Bölge</h3>
+        <MapPin className="h-5 w-5 text-amber-400" />
+        <h3 className="font-bold text-white">En Çok Talep — İl/Bölge</h3>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">Henüz konum verisi yok.</p>
+        <p className="text-sm text-gray-500 py-8 text-center">Henüz konum verisi yok.</p>
       ) : (
         <div className="space-y-4">
           {rows.map((r) => (
             <div key={r.name}>
               <div className="flex justify-between text-sm mb-1.5">
-                <span className="text-gray-700 font-medium capitalize truncate pr-2">{r.name}</span>
+                <span className="text-gray-300 font-medium capitalize truncate pr-2">{r.name}</span>
                 <span className="text-gray-500 font-semibold shrink-0">{r.count}</span>
               </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" style={{ width: `${r.pct}%` }} />
+              <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full" style={{ width: `${r.pct}%` }} />
               </div>
             </div>
           ))}
@@ -147,10 +147,10 @@ function TopProvinces({ orders }) {
 
 export default function DashboardCharts({ orders }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-      <div className="lg:col-span-1"><MonthlyChart orders={orders} /></div>
-      <div className="lg:col-span-1"><ProductBreakdown orders={orders} /></div>
-      <div className="lg:col-span-1"><TopProvinces orders={orders} /></div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
+      <MonthlyChart orders={orders} />
+      <ProductBreakdown orders={orders} />
+      <TopProvinces orders={orders} />
     </div>
   );
 }
