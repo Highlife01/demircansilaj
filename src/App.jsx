@@ -5,9 +5,10 @@ import {
   Package, Info, ArrowRight, Quote, MessageCircle, Play,
   Send, Loader2, AlertCircle, Calculator, TrendingUp
 } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, ORDERS_COLLECTION, MESSAGES_COLLECTION } from './firebase';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION } from './firebase';
 import { provinces } from './data/provinces.js';
+import { translations } from './data/translations.js';
 
 const galleryItems = [
   { type: 'image', src: '/media/tarla1.jpg', title: 'Hasat Öncesi Mısır Kontrolü', desc: 'Mısırların olgunluk düzeylerinin hasat öncesi uzman ekibimiz tarafından sahada incelenmesi.' },
@@ -35,11 +36,44 @@ export default function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMedia, setActiveMedia] = useState(null);
 
+  // Language state
+  const [lang, setLang] = useState('tr');
+  const [testimonials, setTestimonials] = useState([]);
+
+  // Fetch testimonials
+  useEffect(() => {
+    const q = query(
+      collection(db, TESTIMONIALS_COLLECTION),
+      where('approved', '==', true),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setTestimonials(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => console.error("Testimonials loading failed: ", err));
+    return () => unsub();
+  }, []);
+
+  const t = (path) => {
+    const keys = path.split('.');
+    let value = translations[lang];
+    for (const key of keys) {
+      if (!value) return path;
+      value = value[key];
+    }
+    return value || path;
+  };
+
+  const changeLanguage = (newLang) => {
+    setLang(newLang);
+  };
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     location: '',
+    provinceId: 'konya',
+    district: '',
     quantity: 20, // default quantity in tons
     productType: '1000kg',
     notes: ''
@@ -275,30 +309,36 @@ export default function App() {
     // Safety check / sanitization
     const sanitizedName = formData.name.replace(/[<>]/g, "");
     const sanitizedPhone = formData.phone.replace(/[<>]/g, "");
-    const sanitizedLocation = formData.location.replace(/[<>]/g, "");
+    const activeProv = provinces.find(p => p.id === formData.provinceId) || provinces[0];
+    const sanitizedDistrict = formData.district.replace(/[<>]/g, "");
+    const finalLocation = `${activeProv.name} / ${sanitizedDistrict}`;
     const sanitizedNotes = formData.notes.replace(/[<>]/g, "");
     
-    const totalPrice = formData.quantity * productPrices[formData.productType];
+    const productCost = formData.quantity * productPrices[formData.productType];
+    const shippingCost = activeProv.dist === 0 ? 0 : Math.max(4000, Math.ceil(formData.quantity * (activeProv.dist * 2.2)));
+    const totalPrice = productCost + shippingCost;
     
     try {
       // Save order to Firestore
       await addDoc(collection(db, ORDERS_COLLECTION), {
         name: sanitizedName,
         phone: sanitizedPhone,
-        location: sanitizedLocation,
+        location: finalLocation,
         productType: formData.productType,
         productName: productNames[formData.productType],
         quantity: formData.quantity,
         totalPrice: totalPrice,
+        productCost: productCost,
+        shippingCost: shippingCost,
         notes: sanitizedNotes,
-        status: 'pending',
+        status: 'new', // Compliant with firestore rules requirement ('new')
         createdAt: serverTimestamp()
       });
       
       setOrderStatus('success');
       
       // WhatsApp message generation
-      const message = `Merhaba Demircan Silaj,\n\nWeb siteniz üzerinden yeni bir teklif talebi oluşturdum:\n\n👤 *Ad Soyad / Firma:* ${sanitizedName}\n📞 *Telefon:* ${sanitizedPhone}\n📍 *İl / İlçe:* ${sanitizedLocation}\n🌾 *Ürün Tipi:* ${productNames[formData.productType]}\n⚖️ *Miktar:* ${formData.quantity} Ton\n💰 *Tahmini Tutar:* ${totalPrice.toLocaleString('tr-TR')} ₺\n💬 *Notlar:* ${sanitizedNotes || 'Belirtilmedi'}\n\nLütfen lojistik ve fiyat teklifi için iletişime geçiniz. Teşekkürler.`;
+      const message = `Merhaba Demircan Silaj,\n\nWeb siteniz üzerinden yeni bir teklif talebi oluşturdum:\n\n👤 *Ad Soyad / Firma:* ${sanitizedName}\n📞 *Telefon:* ${sanitizedPhone}\n📍 *İl / İlçe:* ${finalLocation}\n🌾 *Ürün Tipi:* ${productNames[formData.productType]}\n⚖️ *Miktar:* ${formData.quantity} Ton\n💰 *Tahmini Ürün Bedeli:* ${productCost.toLocaleString('tr-TR')} ₺\n🚚 *Tahmini Nakliye Bedeli:* ${shippingCost === 0 ? 'Mesafe Yok' : `${shippingCost.toLocaleString('tr-TR')} ₺`}\n💳 *Toplam Tahmini Bütçe:* ${totalPrice.toLocaleString('tr-TR')} ₺\n💬 *Notlar:* ${sanitizedNotes || 'Belirtilmedi'}\n\nLütfen lojistik ve fiyat teklifi için iletişime geçiniz. Teşekkürler.`;
       const encodedMessage = encodeURIComponent(message);
       const whatsappUrl = `https://wa.me/905323272383?text=${encodedMessage}`;
       
@@ -310,6 +350,8 @@ export default function App() {
         name: '',
         phone: '',
         location: '',
+        provinceId: 'konya',
+        district: '',
         quantity: 20,
         productType: '1000kg',
         notes: ''
@@ -352,12 +394,12 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'home', label: 'Ana Sayfa' },
-    { id: 'products', label: 'Ürünlerimiz' },
-    { id: 'quality', label: 'Kalite & Üretim' },
-    { id: 'calculators', label: 'Hesaplama Araçları' },
-    { id: 'knowledge', label: 'Bilgi Merkezi' },
-    { id: 'contact', label: 'İletişim & Sipariş' }
+    { id: 'home', label: t('nav.home') },
+    { id: 'products', label: t('nav.products') },
+    { id: 'quality', label: t('nav.quality') },
+    { id: 'calculators', label: t('nav.calculators') },
+    { id: 'knowledge', label: t('nav.knowledge') },
+    { id: 'contact', label: t('nav.contact') }
   ];
 
   const Navbar = () => (
@@ -386,11 +428,40 @@ export default function App() {
                 {item.label}
               </button>
             ))}
+            
+            {/* Desktop Language Switcher */}
+            <div className={`flex items-center rounded-full p-0.5 border transition-all ${
+              isScrolled || activeTab !== 'home' 
+                ? 'bg-gray-100 border-gray-200' 
+                : 'bg-white/10 border-white/20'
+            }`}>
+              <button 
+                onClick={() => changeLanguage('tr')} 
+                className={`text-[10px] font-black px-2 py-1 rounded-full transition-all ${
+                  lang === 'tr' 
+                    ? 'bg-green-600 text-white shadow-sm' 
+                    : (isScrolled || activeTab !== 'home' ? 'text-gray-500 hover:text-gray-950' : 'text-gray-300 hover:text-white')
+                }`}
+              >
+                TR
+              </button>
+              <button 
+                onClick={() => changeLanguage('en')} 
+                className={`text-[10px] font-black px-2 py-1 rounded-full transition-all ${
+                  lang === 'en' 
+                    ? 'bg-green-600 text-white shadow-sm' 
+                    : (isScrolled || activeTab !== 'home' ? 'text-gray-500 hover:text-gray-950' : 'text-gray-300 hover:text-white')
+                }`}
+              >
+                EN
+              </button>
+            </div>
+
             <button 
               onClick={() => handleNavigation('contact')}
               className="bg-green-600 text-white px-5 lg:px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5"
             >
-              Hemen Sipariş Ver
+              {t('hero.btnOrder')}
             </button>
           </div>
 
@@ -421,12 +492,32 @@ export default function App() {
                 {item.label}
               </button>
             ))}
+            
+            {/* Mobile Language Switcher */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-t border-gray-100">
+              <span className="text-sm font-semibold text-gray-500">Dil / Language:</span>
+              <div className="flex items-center bg-gray-100 border border-gray-200 rounded-full p-0.5">
+                <button 
+                  onClick={() => changeLanguage('tr')} 
+                  className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${lang === 'tr' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500'}`}
+                >
+                  Türkçe
+                </button>
+                <button 
+                  onClick={() => changeLanguage('en')} 
+                  className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${lang === 'en' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500'}`}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+
             <div className="pt-4 px-4">
               <button 
                 onClick={() => handleNavigation('contact')}
                 className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-center block"
               >
-                Hemen Sipariş Ver
+                {t('hero.btnOrder')}
               </button>
             </div>
           </div>
@@ -521,27 +612,27 @@ export default function App() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-left pt-32 pb-20">
           <div className="max-w-3xl">
             <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-semibold tracking-wide mb-8 backdrop-blur-md">
-              <Leaf className="h-4 w-4 mr-2" /> TÜRKİYE'NİN BİRİNCİ SINIF SİLAJI
+              <Leaf className="h-4 w-4 mr-2" /> {t('hero.badge')}
             </span>
             <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.15] mb-8">
-              Yüksek Verim,<br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400">Üstün Kalite.</span>
+              {t('hero.title1')}<br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400">{t('hero.title2')}</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-300 mb-12 font-light leading-relaxed">
-              Süt ve besi hayvancılığında maksimum verim için ideal kuru madde (%30-35) oranına sahip, 24 ay dayanıklı, laboratuvar analizli vakumlu mısır silajı.
+              {t('hero.desc')}
             </p>
             <div className="flex flex-col sm:flex-row gap-5">
               <button 
                 onClick={() => handleNavigation('products')}
-                className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-green-900/50 flex items-center justify-center group"
+                className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-green-900/50 flex items-center justify-center group cursor-pointer"
               >
-                Ürünleri İncele
+                {t('hero.btnProducts')}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
                 onClick={() => handleNavigation('contact')}
-                className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-8 py-4 rounded-full font-bold text-lg transition-all flex items-center justify-center"
+                className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-8 py-4 rounded-full font-bold text-lg transition-all flex items-center justify-center cursor-pointer"
               >
-                Hızlı Sipariş Ver
+                {t('hero.btnOrder')}
               </button>
             </div>
           </div>
@@ -553,15 +644,15 @@ export default function App() {
             <div className="grid grid-cols-3 gap-8 text-center divide-x divide-white/10">
               <div className="px-4">
                 <p className="text-3xl font-bold text-green-400 mb-1">%30-35</p>
-                <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">İDEAL KURU MADDE</p>
+                <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">{t('hero.stat1')}</p>
               </div>
               <div className="px-4">
-                <p className="text-3xl font-bold text-yellow-400 mb-1">24 Ay</p>
-                <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">VAKUMLU DAYANIM SÜRESİ</p>
+                <p className="text-3xl font-bold text-yellow-400 mb-1">24 Ay / Month</p>
+                <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">{t('hero.stat2')}</p>
               </div>
               <div className="px-4">
                 <p className="text-3xl font-bold text-white mb-1">1.5 - 2.2 cm</p>
-                <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">OPTİMUM PARTİKÜL BOYUTU</p>
+                <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">{t('hero.stat3')}</p>
               </div>
             </div>
           </div>
@@ -572,26 +663,26 @@ export default function App() {
       <div className="py-28 bg-gray-55">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">Neden Demircan Silaj?</h2>
-            <p className="text-base text-gray-655 leading-relaxed">En modern tarım teknikleriyle üretilen silajlarımız, hayvanlarınızın ihtiyaç duyduğu tüm enerjiyi en doğal yoldan karşılar.</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">{t('whyUs.title')}</h2>
+            <p className="text-base text-gray-655 leading-relaxed">{t('whyUs.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
               {
                 icon: <ShieldCheck className="h-10 w-10 text-green-600" />,
-                title: "Yüksek Besin Değeri",
-                desc: "Nişasta ve protein açısından zengindir. Doğru zamanda hasat edilerek süt ve et verimini %15'e kadar artırır."
+                title: t('whyUs.item1Title'),
+                desc: t('whyUs.item1Desc')
               },
               {
                 icon: <Package className="h-10 w-10 text-green-600" />,
-                title: "Vakumlu Paketleme",
-                desc: "500kg ve 1000kg'lık özel vakumlu balyalar sayesinde dış koşullardan etkilenmez, 24 ay boyunca bozulmadan saklanabilir."
+                title: t('whyUs.item2Title'),
+                desc: t('whyUs.item2Desc')
               },
               {
                 icon: <Truck className="h-10 w-10 text-green-600" />,
-                title: "Hızlı ve Güvenli Teslimat",
-                desc: "Türkiye'nin her noktasına kendi araç filomuz ve lojistik ağımızla zamanında ve güvenli teslimat garantisi."
+                title: t('whyUs.item3Title'),
+                desc: t('whyUs.item3Desc')
               }
             ].map((feature, idx) => (
               <div key={idx} className="bg-white rounded-3xl p-10 shadow-lg shadow-gray-200/40 border border-gray-100 hover:-translate-y-2 transition-all duration-300 text-left">
@@ -600,6 +691,62 @@ export default function App() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed text-sm">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonials Section */}
+      <div className="py-24 bg-white border-t border-gray-105">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">{t('testimonials.title')}</h2>
+            <p className="text-base text-gray-655 leading-relaxed">{t('testimonials.subtitle')}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {((testimonials && testimonials.length > 0) ? testimonials : [
+              {
+                id: 'def1',
+                name: t('testimonials.default1Name'),
+                company: t('testimonials.default1Company'),
+                rating: 5,
+                message: t('testimonials.default1Message')
+              },
+              {
+                id: 'def2',
+                name: t('testimonials.default2Name'),
+                company: t('testimonials.default2Company'),
+                rating: 5,
+                message: t('testimonials.default2Message')
+              },
+              {
+                id: 'def3',
+                name: t('testimonials.default3Name'),
+                company: t('testimonials.default3Company'),
+                rating: 5,
+                message: t('testimonials.default3Message')
+              }
+            ]).map((test) => (
+              <div key={test.id} className="bg-gray-55 rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left">
+                <div>
+                  <div className="flex gap-1 mb-5 text-yellow-500">
+                    {[...Array(test.rating || 5)].map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-gray-650 italic text-sm leading-relaxed mb-6">"{test.message}"</p>
+                </div>
+                <div className="flex items-center gap-3 pt-5 border-t border-gray-200/60">
+                  <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center font-bold text-green-700 text-sm">
+                    {test.name ? test.name.charAt(0).toUpperCase() : 'M'}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">{test.name}</h4>
+                    <p className="text-xs text-gray-400">{test.company || t('testimonials.approved')}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1018,12 +1165,13 @@ export default function App() {
 
           {/* Order Form (Right Side) */}
           <div className="lg:col-span-3 p-10 md:p-12">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8">Hızlı Fiyat Hesaplayıcı ve Teklif Formu</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-8">{t('contactPage.formTitle')}</h3>
+            <p className="text-sm text-gray-500 mb-6 font-light leading-relaxed">{t('contactPage.formDesc')}</p>
             <form className="space-y-6" onSubmit={handleFormSubmit}>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Adınız Soyadınız / Firma Adı *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('contactPage.name')} *</label>
                   <input 
                     type="text" 
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm" 
@@ -1034,7 +1182,7 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Telefon Numaranız *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('contactPage.phone')} *</label>
                   <input 
                     type="tel" 
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-55 focus:bg-white text-sm" 
@@ -1046,74 +1194,101 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Advanced location: Province select + district text */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">İl / İlçe *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('calculatorsPage.selectProv')} *</label>
+                  <select 
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-55 focus:bg-white text-sm text-gray-700 cursor-pointer"
+                    value={formData.provinceId}
+                    onChange={(e) => setFormData({...formData, provinceId: e.target.value})}
+                    required
+                  >
+                    {provinces.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('contactPage.location')} ({t('contactPage.provPlaceholder').replace('...', '')}) *</label>
                   <input 
                     type="text" 
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm" 
-                    placeholder="Konya / Karatay" 
-                    value={formData.location}
-                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    placeholder="Karatay / Çiftlik Köyü" 
+                    value={formData.district}
+                    onChange={(e) => setFormData({...formData, district: e.target.value})}
                     required 
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tercih Edilen Ürün Tipi</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('contactPage.productType')}</label>
                   <select 
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm text-gray-700"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm text-gray-700 cursor-pointer"
                     value={formData.productType}
                     onChange={(e) => setFormData({...formData, productType: e.target.value})}
                   >
-                    <option value="1000kg">1000 kg Vakumlu Mısır Silajı (5.500 ₺/Ton)</option>
-                    <option value="500kg">500 kg Vakumlu Mısır Silajı (5.500 ₺/Ton)</option>
-                    <option value="dokme">Dökme Mısır Silajı (5.500 ₺/Ton)</option>
-                    <option value="diger">Diğer (Yonca, Fiğ vb.) (5.500 ₺/Ton)</option>
+                    <option value="1000kg">{t('productsPage.types.1000kg.title')} (5.500 ₺/Ton)</option>
+                    <option value="500kg">{t('productsPage.types.500kg.title')} (5.500 ₺/Ton)</option>
+                    <option value="dokme">{t('productsPage.types.dokme.title')} (5.500 ₺/Ton)</option>
+                    <option value="diger">{t('productsPage.types.diger.title')} (5.500 ₺/Ton)</option>
                   </select>
                 </div>
-              </div>
-
-              {/* Quantity Slider */}
-              <div className="bg-gray-55 p-6 rounded-2xl border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm font-semibold text-gray-700">Sipariş Miktarı</span>
-                  <span className="bg-green-100 text-green-800 text-sm font-extrabold px-3 py-1 rounded-full">{formData.quantity} Ton</span>
-                </div>
-                <input 
-                  type="range" 
-                  min="5" 
-                  max="200" 
-                  step="5"
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600 focus:outline-none"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})}
-                />
-                <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium">
-                  <span>5 Ton</span>
-                  <span>100 Ton</span>
-                  <span>200 Ton</span>
-                </div>
-              </div>
-
-              {/* Live Price Calculator */}
-              <div className="bg-green-50 p-6 rounded-2xl border border-green-100 flex justify-between items-center">
                 <div>
-                  <p className="text-xs text-green-700 font-bold uppercase tracking-wider">Tahmini Sipariş Tutarı</p>
-                  <p className="text-xs text-gray-500 mt-0.5">* Nakliye ücreti hariç hesaplanmıştır.</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('contactPage.quantity')}</label>
+                    <span className="bg-green-100 text-green-800 text-sm font-extrabold px-3 py-1 rounded-full">{formData.quantity} Ton</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="5" 
+                    max="200" 
+                    step="5"
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600 focus:outline-none"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})}
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1 font-medium">
+                    <span>5 Ton</span>
+                    <span>100 Ton</span>
+                    <span>200 Ton</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-2xl font-extrabold text-green-800">
-                    {(formData.quantity * productPrices[formData.productType]).toLocaleString('tr-TR')} ₺
-                  </span>
+              </div>
+
+              {/* Dynamic Cost Breakdowns (WOW factor) */}
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-150 space-y-4">
+                <h4 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('contactPage.shippingNotice')}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm text-left">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('calculatorsPage.productPrice')}</span>
+                    <span className="text-base font-extrabold text-gray-900 mt-1 block">{(formData.quantity * productPrices[formData.productType]).toLocaleString('tr-TR')} ₺</span>
+                  </div>
+                  <div className="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm text-left">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('contactPage.shippingCost')}</span>
+                    <span className="text-base font-extrabold text-gray-900 mt-1 block">
+                      {formData.provinceId === 'adana' ? t('calculatorsPage.noDistance') : `${(formData.provinceId === 'adana' ? 0 : Math.max(4000, Math.ceil(formData.quantity * ((provinces.find(p => p.id === formData.provinceId) || provinces[0]).dist * 2.2)))).toLocaleString('tr-TR')} ₺`}
+                    </span>
+                    <span className="text-[9px] text-gray-400 block mt-0.5">({(provinces.find(p => p.id === formData.provinceId) || provinces[0]).dist} km)</span>
+                  </div>
+                  <div className="bg-green-50 p-3.5 rounded-xl border border-green-100 text-left">
+                    <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider block">{t('contactPage.totalCost')}</span>
+                    <span className="text-base font-black text-green-800 mt-1 block">
+                      {((formData.quantity * productPrices[formData.productType]) + (formData.provinceId === 'adana' ? 0 : Math.max(4000, Math.ceil(formData.quantity * ((provinces.find(p => p.id === formData.provinceId) || provinces[0]).dist * 2.2))))).toLocaleString('tr-TR')} ₺
+                    </span>
+                    <span className="text-[9px] text-green-600 block mt-0.5">{t('calculatorsPage.budgetNotice')}</span>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Eklemek İstedikleriniz (Varsa)</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('contactPage.notes')}</label>
                 <textarea 
                   rows="3" 
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm resize-none" 
-                  placeholder="Lojistik durumu, özel istekler veya sorularınızı buraya yazabilirsiniz..."
+                  placeholder={lang === 'tr' ? "Lojistik durumu, özel istekler veya sorularınızı buraya yazabilirsiniz..." : "Write logistics details, special requests or questions here..."}
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                 ></textarea>
@@ -1123,26 +1298,26 @@ export default function App() {
                 <button 
                   type="submit" 
                   disabled={orderStatus === 'sending'}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-550 text-white font-bold text-base py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-650 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-550 text-white font-bold text-base py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-650 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {orderStatus === 'sending' ? (
-                    <><Loader2 className="h-5 w-5 animate-spin" /> İletiliyor...</>
+                    <><Loader2 className="h-5 w-5 animate-spin" /> {lang === 'tr' ? 'İletiliyor...' : 'Sending...'}</>
                   ) : (
-                    <><MessageCircle className="h-5 w-5" /> WhatsApp ile Teklif İste</>
+                    <><MessageCircle className="h-5 w-5" /> {t('contactPage.submitOrder')}</>
                   )}
                 </button>
-                <p className="text-center text-xs text-gray-400 mt-4">Talebiniz kaydedildikten sonra sizi WhatsApp yetkilisine yönlendirecektir.</p>
+                <p className="text-center text-xs text-gray-400 mt-4">{lang === 'tr' ? 'Talebiniz kaydedildikten sonra sizi WhatsApp yetkilisine yönlendirecektir.' : 'Your request will redirect you to WhatsApp after being saved.'}</p>
                 
                 {orderStatus === 'success' && (
                   <div className="flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-800 text-sm rounded-xl px-4 py-3 mt-4">
                     <CheckCircle className="h-5 w-5 shrink-0 mt-0.5 text-green-600" />
-                    <span>Talebiniz başarıyla kaydedildi! WhatsApp yönlendirmeniz açıldı.</span>
+                    <span>{t('contactPage.successMsg')}</span>
                   </div>
                 )}
                 {orderStatus === 'error' && (
                   <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-800 text-sm rounded-xl px-4 py-3 mt-4">
                     <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-600" />
-                    <span>Bağlantı hatası oluştu, ancak doğrudan WhatsApp üzerinden de iletişime geçebilirsiniz.</span>
+                    <span>{t('contactPage.errorMsg')}</span>
                   </div>
                 )}
               </div>

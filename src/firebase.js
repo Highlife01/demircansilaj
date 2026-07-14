@@ -21,5 +21,6 @@ export const auth = getAuth(app);
 // Proje başka uygulamalarla paylaşıldığı için koleksiyonları önekliyoruz.
 export const ORDERS_COLLECTION = 'demircan_orders';
 export const MESSAGES_COLLECTION = 'demircan_messages';
+export const TESTIMONIALS_COLLECTION = 'demircan_testimonials';
 
 export default app;

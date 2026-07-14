@@ -2,16 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import {
   collection, query, orderBy, onSnapshot,
-  doc, updateDoc, deleteDoc, writeBatch,
+  doc, updateDoc, deleteDoc, writeBatch, addDoc, serverTimestamp,
 } from 'firebase/firestore';
 import {
   LogOut, Package, MessageSquare, TrendingUp, Bell,
   Phone, MapPin, Mail, Trash2, Search, Clock, CheckCircle2,
   PhoneCall, Loader2, Inbox, User, Weight, Banknote,
   Download, CheckCheck, Filter, BellRing, StickyNote,
-  Activity, Radio, Zap, Satellite,
+  Activity, Radio, Zap, Satellite, Star, Plus, X,
 } from 'lucide-react';
-import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION } from '../firebase';
+import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION } from '../firebase';
 import DashboardCharts from './DashboardCharts';
 import OrderDetailModal from './OrderDetailModal';
 import { playChime, showBrowserNotification, requestNotifyPermission, getNotifyPermission } from './notify';
@@ -84,13 +84,20 @@ function StatCard({ icon, label, value, accent, glow }) {
 export default function AdminDashboard({ user }) {
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('orders');
+  const [tab, setTab] = useState('orders'); // orders, messages, testimonials
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [timeFilter, setTimeFilter] = useState('all'); // all, 7days, 30days, thisMonth, thisYear
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [notifyPerm, setNotifyPerm] = useState(getNotifyPermission());
   const [now, setNow] = useState(new Date());
+
+  // Testimonial Form State
+  const [showAddTestimonial, setShowAddTestimonial] = useState(false);
+  const [newTestimonial, setNewTestimonial] = useState({ name: '', company: '', rating: 5, message: '' });
+  const [savingTestimonial, setSavingTestimonial] = useState(false);
 
   const firstOrdersLoad = useRef(true);
   const firstMessagesLoad = useRef(true);
@@ -104,6 +111,7 @@ export default function AdminDashboard({ user }) {
   useEffect(() => {
     const qOrders = query(collection(db, ORDERS_COLLECTION), orderBy('createdAt', 'desc'));
     const qMessages = query(collection(db, MESSAGES_COLLECTION), orderBy('createdAt', 'desc'));
+    const qTestimonials = query(collection(db, TESTIMONIALS_COLLECTION), orderBy('createdAt', 'desc'));
 
     const unsubOrders = onSnapshot(qOrders, (snap) => {
       // İlk yüklemeden sonra gelen yeni siparişlerde ses + bildirim.
@@ -135,7 +143,11 @@ export default function AdminDashboard({ user }) {
       setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     }, (err) => console.error(err));
 
-    return () => { unsubOrders(); unsubMessages(); };
+    const unsubTestimonials = onSnapshot(qTestimonials, (snap) => {
+      setTestimonials(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, (err) => console.error(err));
+
+    return () => { unsubOrders(); unsubMessages(); unsubTestimonials(); };
   }, []);
 
   const enableNotifications = async () => {
@@ -147,16 +159,60 @@ export default function AdminDashboard({ user }) {
     }
   };
 
+  // Filter orders by time range
+  const filteredOrdersByTime = useMemo(() => {
+    const now = new Date();
+    return orders.filter((o) => {
+      const d = o.createdAt?.toDate ? o.createdAt.toDate() : null;
+      if (!d) return true;
+      if (timeFilter === '7days') {
+        return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+      }
+      if (timeFilter === '30days') {
+        return (now - d) / (1000 * 60 * 60 * 24) <= 30;
+      }
+      if (timeFilter === 'thisMonth') {
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+      if (timeFilter === 'thisYear') {
+        return d.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+  }, [orders, timeFilter]);
+
+  // Filter messages by time range
+  const filteredMessagesByTime = useMemo(() => {
+    const now = new Date();
+    return messages.filter((m) => {
+      const d = m.createdAt?.toDate ? m.createdAt.toDate() : null;
+      if (!d) return true;
+      if (timeFilter === '7days') {
+        return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+      }
+      if (timeFilter === '30days') {
+        return (now - d) / (1000 * 60 * 60 * 24) <= 30;
+      }
+      if (timeFilter === 'thisMonth') {
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+      if (timeFilter === 'thisYear') {
+        return d.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+  }, [messages, timeFilter]);
+
   const stats = useMemo(() => {
-    const newOrders = orders.filter((o) => o.status === 'new').length;
-    const newMessages = messages.filter((m) => m.status === 'new').length;
-    const revenue = orders
+    const newOrders = filteredOrdersByTime.filter((o) => o.status === 'new').length;
+    const newMessages = filteredMessagesByTime.filter((m) => m.status === 'new').length;
+    const revenue = filteredOrdersByTime
       .filter((o) => o.status !== 'cancelled')
       .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
     const isToday = (ts) => ts?.toDate && ts.toDate().toDateString() === new Date().toDateString();
     const todayCount = orders.filter((o) => isToday(o.createdAt)).length + messages.filter((m) => isToday(m.createdAt)).length;
-    return { newOrders, newMessages, revenue, totalOrders: orders.length, totalMessages: messages.length, todayCount };
-  }, [orders, messages]);
+    return { newOrders, newMessages, revenue, totalOrders: filteredOrdersByTime.length, totalMessages: filteredMessagesByTime.length, todayCount };
+  }, [filteredOrdersByTime, filteredMessagesByTime, orders, messages]);
 
   // Birleşik canlı akış: sipariş + mesajlar kronolojik (en yeni önce).
   const feed = useMemo(() => {
@@ -179,24 +235,31 @@ export default function AdminDashboard({ user }) {
 
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return orders.filter((o) => {
+    return filteredOrdersByTime.filter((o) => {
       if (statusFilter !== 'all' && (o.status || 'new') !== statusFilter) return false;
       if (!q) return true;
       return [o.name, o.phone, o.location, o.productName].some((f) => (f || '').toLowerCase().includes(q));
     });
-  }, [orders, search, statusFilter]);
+  }, [filteredOrdersByTime, search, statusFilter]);
 
   const filteredMessages = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return messages;
-    return messages.filter((m) =>
+    if (!q) return filteredMessagesByTime;
+    return filteredMessagesByTime.filter((m) =>
       [m.name, m.phone, m.email, m.message].some((f) => (f || '').toLowerCase().includes(q))
     );
-  }, [messages, search]);
+  }, [filteredMessagesByTime, search]);
 
   const setOrderStatus = async (id, status) => {
     try { await updateDoc(doc(db, ORDERS_COLLECTION, id), { status }); }
     catch (err) { console.error(err); }
+  };
+
+  const updateOrder = async (id, updatedFields) => {
+    try {
+      await updateDoc(doc(db, ORDERS_COLLECTION, id), updatedFields);
+      setSelectedOrder((prev) => (prev && prev.id === id ? { ...prev, ...updatedFields } : prev));
+    } catch (err) { console.error(err); }
   };
 
   const markMessageRead = async (id) => {
@@ -209,6 +272,35 @@ export default function AdminDashboard({ user }) {
       await updateDoc(doc(db, ORDERS_COLLECTION, id), { adminNote });
       setSelectedOrder((prev) => (prev && prev.id === id ? { ...prev, adminNote } : prev));
     } catch (err) { console.error(err); }
+  };
+
+  // Testimonial actions
+  const toggleTestimonialApproval = async (id, currentApproved) => {
+    try {
+      await updateDoc(doc(db, TESTIMONIALS_COLLECTION, id), { approved: !currentApproved });
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddTestimonial = async (e) => {
+    e.preventDefault();
+    if (!newTestimonial.name || !newTestimonial.message) return;
+    setSavingTestimonial(true);
+    try {
+      await addDoc(collection(db, TESTIMONIALS_COLLECTION), {
+        name: newTestimonial.name,
+        company: newTestimonial.company,
+        rating: Number(newTestimonial.rating),
+        message: newTestimonial.message,
+        approved: true,
+        createdAt: serverTimestamp()
+      });
+      setNewTestimonial({ name: '', company: '', rating: 5, message: '' });
+      setShowAddTestimonial(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingTestimonial(false);
+    }
   };
 
   const removeDoc = async (coll, id) => {
@@ -349,9 +441,31 @@ export default function AdminDashboard({ user }) {
               <MessageSquare className="h-4 w-4" /> Mesajlar
               {stats.newMessages > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${tab === 'messages' ? 'bg-black/20' : 'bg-amber-500/20 text-amber-300'}`}>{stats.newMessages}</span>}
             </button>
+            <button
+              onClick={() => setTab('testimonials')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'testimonials' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              <Star className="h-4 w-4" /> Yorumlar
+            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Tarih Aralığı Filtresi */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-medium text-gray-200 cursor-pointer [&>option]:bg-[#0b1220]"
+              >
+                <option value="all">Tüm Zamanlar</option>
+                <option value="7days">Son 7 Gün</option>
+                <option value="30days">Son 30 Gün</option>
+                <option value="thisMonth">Bu Ay</option>
+                <option value="thisYear">Bu Yıl</option>
+              </select>
+            </div>
+
             {tab === 'orders' && (
               <div className="relative">
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
@@ -370,29 +484,33 @@ export default function AdminDashboard({ user }) {
             {tab === 'messages' && stats.newMessages > 0 && (
               <button
                 onClick={markAllMessagesRead}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors cursor-pointer"
               >
                 <CheckCheck className="h-4 w-4 text-emerald-400" /> Tümünü okundu
               </button>
             )}
 
-            <button
-              onClick={exportCurrent}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors"
-            >
-              <Download className="h-4 w-4 text-emerald-400" /> CSV
-            </button>
+            {tab !== 'testimonials' && (
+              <button
+                onClick={exportCurrent}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors cursor-pointer"
+              >
+                <Download className="h-4 w-4 text-emerald-400" /> CSV
+              </button>
+            )}
 
-            <div className="relative sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Ara: isim, telefon, il..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm"
-              />
-            </div>
+            {tab !== 'testimonials' && (
+              <div className="relative sm:w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Ara: isim, telefon, il..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm"
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -402,8 +520,15 @@ export default function AdminDashboard({ user }) {
           </div>
         ) : tab === 'orders' ? (
           <OrdersList orders={filteredOrders} onStatus={setOrderStatus} onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} onOpen={setSelectedOrder} />
-        ) : (
+        ) : tab === 'messages' ? (
           <MessagesList messages={filteredMessages} onRead={markMessageRead} onDelete={(id) => removeDoc(MESSAGES_COLLECTION, id)} />
+        ) : (
+          <TestimonialsList 
+            testimonials={testimonials} 
+            onToggleApproval={toggleTestimonialApproval} 
+            onDelete={(id) => removeDoc(TESTIMONIALS_COLLECTION, id)}
+            onAddClick={() => setShowAddTestimonial(true)} 
+          />
         )}
       </main>
 
@@ -413,7 +538,89 @@ export default function AdminDashboard({ user }) {
           onClose={() => setSelectedOrder(null)}
           onSaveNote={saveOrderNote}
           onStatus={setOrderStatus}
+          onUpdateOrder={updateOrder}
         />
+      )}
+
+      {/* Yeni Yorum Ekleme Modalı */}
+      {showAddTestimonial && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 w-full max-w-md text-left relative shadow-2xl">
+            <button 
+              onClick={() => setShowAddTestimonial(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 border-b border-white/5 pb-3">
+              <Plus className="text-emerald-400 h-5 w-5" /> Yeni Müşteri Yorumu
+            </h3>
+            <form onSubmit={handleAddTestimonial} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Müşteri Adı Soyadı</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Örn: Ahmet Yılmaz"
+                  value={newTestimonial.name}
+                  onChange={(e) => setNewTestimonial({...newTestimonial, name: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Firma / Konum (Opsiyonel)</label>
+                <input 
+                  type="text"
+                  placeholder="Örn: Yılmaz Besicilik (Konya)"
+                  value={newTestimonial.company}
+                  onChange={(e) => setNewTestimonial({...newTestimonial, company: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Puan (1-5 Yıldız)</label>
+                <select
+                  value={newTestimonial.rating}
+                  onChange={(e) => setNewTestimonial({...newTestimonial, rating: Number(e.target.value)})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 [&>option]:bg-[#0b1220]"
+                >
+                  <option value="5">5 Yıldız (Mükemmel)</option>
+                  <option value="4">4 Yıldız (Çok İyi)</option>
+                  <option value="3">3 Yıldız (Orta)</option>
+                  <option value="2">2 Yıldız (Kötü)</option>
+                  <option value="1">1 Yıldız (Çok Kötü)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Yorum Metni</label>
+                <textarea 
+                  required
+                  rows="4"
+                  placeholder="Müşterinin yorumunu yazınız..."
+                  value={newTestimonial.message}
+                  onChange={(e) => setNewTestimonial({...newTestimonial, message: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none resize-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddTestimonial(false)}
+                  className="px-4 py-2 text-sm text-gray-400 hover:text-white cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={savingTestimonial}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-black px-5 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 cursor-pointer"
+                >
+                  {savingTestimonial ? 'Kaydediliyor...' : 'Yorumu Ekle'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -580,6 +787,65 @@ function MessagesList({ messages, onRead, onDelete }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function TestimonialsList({ testimonials, onToggleApproval, onDelete, onAddClick }) {
+  return (
+    <div className="space-y-4 text-left">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Star className="h-5 w-5 text-yellow-500 fill-current" /> Müşteri Yorumları ({testimonials.length})
+        </h3>
+        <button 
+          onClick={onAddClick}
+          className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+        >
+          <Plus className="h-4 w-4" /> Yeni Yorum Ekle
+        </button>
+      </div>
+
+      {testimonials.length === 0 ? (
+        <EmptyState icon={<Star className="h-10 w-10 text-gray-605" />} text="Henüz yorum bulunmuyor." />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {testimonials.map((t) => (
+            <div key={t.id} className={`rounded-2xl border bg-white/[0.03] p-5 flex flex-col justify-between transition-colors ${t.approved ? 'border-white/10' : 'border-dashed border-white/20'}`}>
+              <div>
+                <div className="flex justify-between items-start gap-3 mb-4">
+                  <div>
+                    <h4 className="font-bold text-white text-sm">{t.name || 'İsimsiz'}</h4>
+                    <p className="text-xs text-gray-500">{t.company || 'Referans / Firma'}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {[...Array(t.rating || 5)].map((_, i) => (
+                      <Star key={i} className="h-3.5 w-3.5 text-yellow-500 fill-current" />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-300 italic leading-relaxed mb-6">"{t.message}"</p>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                <button 
+                  onClick={() => onToggleApproval(t.id, t.approved)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${t.approved ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}
+                >
+                  {t.approved ? 'Yayında (Aktif)' : 'Taslak (Gizli)'}
+                </button>
+                <button 
+                  onClick={() => onDelete(t.id)}
+                  title="Sil" 
+                  className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

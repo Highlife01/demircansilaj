@@ -154,6 +154,12 @@ service cloud.firestore {
       allow read, update, delete: if isDemircanAdmin() || isSuperAdmin();
     }
 
+    // Müşteri Yorumları (Testimonials): herkes okuyabilir, sadece Demircan admini yönetir.
+    match /demircan_testimonials/{testimonialId} {
+      allow read: if true;
+      allow write: if isDemircanAdmin() || isSuperAdmin();
+    }
+
     // Deny every other path by default.
     match /{document=**} {
       allow read, write: if false;
