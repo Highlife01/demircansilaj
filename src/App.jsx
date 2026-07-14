@@ -173,7 +173,7 @@ export default function App() {
     else if (id === 'knowledge') navigateTo('/bilgi-merkezi');
   };
 
-  // JSON-LD Schema Auto-Injector
+  // JSON-LD Schema & Dynamic Meta Injector
   useEffect(() => {
     const existingScript = document.getElementById('demircan-jsonld');
     if (existingScript) {
@@ -181,14 +181,25 @@ export default function App() {
     }
 
     let schema = null;
+    let pageTitle = '';
+    let pageDesc = '';
+    let pageCanonical = 'https://www.demircansilaj.com.tr' + currentPath;
+
     const matchProvince = currentPath.match(/^\/il\/([a-z0-9-]+)-misir-silaji$/);
 
     if (currentPath === '/') {
+      pageTitle = lang === 'tr' 
+        ? 'Demircan Silaj — Premium Mısır Silajı, Kapınıza Teslim' 
+        : 'Demircan Silage — Premium Corn Silage, Delivered to Your Door';
+      pageDesc = lang === 'tr' 
+        ? 'Demircan Silaj: yüksek enerjili, fermente mısır silajı. Süt ve besi hayvancılığı için ton bazında sipariş, hızlı teslimat, laboratuvar analizli kalite.' 
+        : 'Demircan Silage: high energy, fermented corn silage. Ton-based order, fast delivery, and lab-analyzed quality for dairy and beef livestock.';
+      
       schema = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
         "name": "Demircan Silaj",
-        "image": "https://demircansilaj.web.app/media/tarla1.jpg",
+        "image": "https://www.demircansilaj.com.tr/media/13.jpeg",
         "telephone": "+905323272383",
         "email": "info@demircansilaj.com.tr",
         "address": {
@@ -197,11 +208,18 @@ export default function App() {
           "addressLocality": "Adana",
           "addressCountry": "TR"
         },
-        "url": "https://demircansilaj.web.app",
+        "url": "https://www.demircansilaj.com.tr",
         "priceRange": "$$",
-        "description": "Süt ve besi hayvancılığında maksimum verim için ideal kuru madde (%30-35) oranına sahip, 24 ay dayanıklı, laboratuvar analizli vakumlu mısır silajı üreticisi."
+        "description": pageDesc
       };
     } else if (currentPath === '/urunlerimiz') {
+      pageTitle = lang === 'tr' 
+        ? 'Premium Kaba Yem Ürünlerimiz — Demircan Silaj' 
+        : 'Premium Roughage Feed Products — Demircan Silage';
+      pageDesc = lang === 'tr' 
+        ? 'Premium 1000 kg vakumlu, 500 kg vakumlu balya ve dökme mısır silajı seçeneklerimizle kaba yem rasyon maliyetlerini düşürün.' 
+        : 'Lower roughage ration costs with our premium 1000 kg vacuum, 500 kg vacuum bale, and bulk corn silage options.';
+      
       schema = {
         "@context": "https://schema.org",
         "@type": "ItemList",
@@ -230,15 +248,36 @@ export default function App() {
           }
         ]
       };
+    } else if (currentPath === '/kalite-ve-uretim') {
+      pageTitle = lang === 'tr' 
+        ? 'Kalite Standartlarımız & Modern Üretim — Demircan Silaj' 
+        : 'Quality Standards & Modern Production — Demircan Silage';
+      pageDesc = lang === 'tr' 
+        ? 'İdeal %31-35 kuru madde, 3.8-4.1 pH oranına sahip akredite laboratuvar analiz değerlerimiz ve 7 kat sarımlı UV stretch paketleme detaylarımız.' 
+        : 'Accredited lab analysis showing 31-35% dry matter, 3.8-4.1 pH balance, and 7-layer UV stretch packaging details.';
+    } else if (currentPath === '/iletisim-ve-siparis') {
+      pageTitle = lang === 'tr' 
+        ? 'İletişim, Fiyat Teklifi & Hızlı Sipariş — Demircan Silaj' 
+        : 'Contact, Price Quote & Quick Order — Demircan Silage';
+      pageDesc = lang === 'tr' 
+        ? 'Adana fabrikamızdan Türkiye geneli lojistik dahil net fiyat teklifi almak, sipariş oluşturmak veya bizimle iletişime geçmek için formumuzu doldurun.' 
+        : 'Fill in the form to get a net price quote including logistics throughout Turkey from our Adana factory, place an order, or contact us.';
     } else if (matchProvince) {
       const provId = matchProvince[1];
       const prov = provinces.find(p => p.id === provId);
       if (prov) {
+        pageTitle = lang === 'tr' 
+          ? `${prov.name} Mısır Silajı Fiyatları & Sipariş — Demircan Silaj` 
+          : `${prov.name} Corn Silage Prices & Order — Demircan Silage`;
+        pageDesc = lang === 'tr' 
+          ? `${prov.name} genelindeki tüm besi ve süt üreticilerine, Adana fabrikamızdan ${prov.time} teslimatlı vakumlu ve dökme mısır silajı satışı.` 
+          : `Vacuumed and bulk corn silage sales to all beef and dairy producers throughout ${prov.name}, with delivery in ${prov.time} from our Adana factory.`;
+        
         schema = {
           "@context": "https://schema.org",
           "@type": "Product",
           "name": `${prov.name} Mısır Silajı Tedariği`,
-          "description": `${prov.name} genelinde hayvancılık rasyon ihtiyaçlarına özel, Adana fabrikamızdan ${prov.time} teslimatlı vakumlu ve dökme mısır silajı satışı.`,
+          "description": pageDesc,
           "offers": {
             "@type": "AggregateOffer",
             "lowPrice": "5500",
@@ -248,11 +287,18 @@ export default function App() {
         };
       }
     } else if (currentPath === '/hesaplama-araclari') {
+      pageTitle = lang === 'tr' 
+        ? 'Mısır Silajı İhtiyacı & Süt Verim Hesaplayıcı' 
+        : 'Corn Silage Feed Need & Milk Yield Calculator';
+      pageDesc = lang === 'tr' 
+        ? 'Hayvan sayısı ve süresine göre kaba yem ihtiyaçlarınızı ton bazında hesaplayın, nakliye bütçesini ve ek süt geliri kazancınızı bulun.' 
+        : 'Calculate your roughage feed needs in tons based on animal count and period, estimate shipping budget and additional milk profit.';
+      
       schema = {
         "@context": "https://schema.org",
         "@type": "HowTo",
         "name": "Mısır Silajı İhtiyacı Nasıl Hesaplanır?",
-        "description": "Hayvan sayınıza, günlük kaba yem tüketim miktarına ve besleme süresine göre çiftliğinizin ihtiyaç duyduğu silaj tonajını hesaplayın.",
+        "description": pageDesc,
         "step": [
           {
             "@type": "HowToStep",
@@ -272,11 +318,18 @@ export default function App() {
         ]
       };
     } else if (currentPath === '/bilgi-merkezi') {
+      pageTitle = lang === 'tr' 
+        ? 'Kaba Yem Bilgi Merkezi & Rehberler — Demircan Silaj' 
+        : 'Roughage Feed Info Hub & Guides — Demircan Silage';
+      pageDesc = lang === 'tr' 
+        ? 'Mısır silajında ideal nem, koçan olgunluğu, biçim boyutu, rasyon hazırlama teknikleri ve yem kalitesi hakkında akademik rehberler.' 
+        : 'Academic guides on ideal moisture, cob maturity, cutting size, ration preparation techniques, and feed quality in corn silage.';
+      
       schema = {
         "@context": "https://schema.org",
         "@type": "Article",
         "headline": "Mısır Silajı Kalite ve Besleme Standartları Rehberi",
-        "description": "Yüksek verimli mısır silajı kuru madde oranları, pH değerleri, nişasta seviyeleri ve rasyon dengeleri hakkında bilimsel GEO ve referans rehberi.",
+        "description": pageDesc,
         "author": {
           "@type": "Organization",
           "name": "Demircan Silaj Uzmanları"
@@ -286,13 +339,39 @@ export default function App() {
           "name": "Demircan Silaj",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://demircansilaj.web.app/favicon.svg"
+            "url": "https://www.demircansilaj.com.tr/favicon.svg"
           }
         },
-        "mainEntityOfPage": "https://demircansilaj.web.app/bilgi-merkezi"
+        "mainEntityOfPage": "https://www.demircansilaj.com.tr/bilgi-merkezi"
       };
     }
 
+    // Dynamic tags injection
+    if (pageTitle) {
+      document.title = pageTitle;
+      const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+      if (ogTitleMeta) ogTitleMeta.setAttribute('content', pageTitle);
+    }
+    if (pageDesc) {
+      const descMeta = document.querySelector('meta[name="description"]');
+      if (descMeta) descMeta.setAttribute('content', pageDesc);
+      const ogDescMeta = document.querySelector('meta[property="og:description"]');
+      if (ogDescMeta) ogDescMeta.setAttribute('content', pageDesc);
+    }
+    
+    // Canonical link update
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', pageCanonical);
+
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    if (ogUrlMeta) ogUrlMeta.setAttribute('content', pageCanonical);
+
+    // JSON-LD injection
     if (schema) {
       const script = document.createElement('script');
       script.id = 'demircan-jsonld';
@@ -300,7 +379,7 @@ export default function App() {
       script.innerHTML = JSON.stringify(schema);
       document.head.appendChild(script);
     }
-  }, [currentPath]);
+  }, [currentPath, lang]);
 
   // Form Submit (WhatsApp + Firestore)
   const handleFormSubmit = async (e) => {
