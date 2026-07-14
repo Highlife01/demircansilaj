@@ -189,7 +189,7 @@ export default function App() {
         "name": "Demircan Silaj",
         "image": "https://demircansilaj.web.app/media/tarla1.jpg",
         "telephone": "+905323272383",
-        "email": "info@demircansilaj.com",
+        "email": "info@demircansilaj.com.tr",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "Organize Tarım Bölgesi, Merkez Mah. Tarım Sk. No:12",
@@ -581,7 +581,7 @@ export default function App() {
               </li>
               <li className="flex items-center text-sm">
                 <Mail className="h-5 w-5 text-green-500 mr-3 shrink-0" />
-                <span>info@demircansilaj.com</span>
+                <span>info@demircansilaj.com.tr</span>
               </li>
             </ul>
           </div>
@@ -1137,7 +1137,7 @@ export default function App() {
                   </div>
                   <div>
                     <p className="text-xs text-green-400 font-bold uppercase tracking-wider mb-1">E-Posta Adresimiz</p>
-                    <p className="text-lg font-bold">satis@demircansilaj.com</p>
+                    <p className="text-lg font-bold">satis@demircansilaj.com.tr</p>
                   </div>
                 </div>
                 
@@ -1339,7 +1339,7 @@ export default function App() {
               </p>
               <div className="space-y-4 text-sm">
                 <div className="flex items-center"><Phone className="h-5 w-5 text-green-400 mr-3 shrink-0" /> +90 532 327 23 83</div>
-                <div className="flex items-center"><Mail className="h-5 w-5 text-green-400 mr-3 shrink-0" /> info@demircansilaj.com</div>
+                <div className="flex items-center"><Mail className="h-5 w-5 text-green-400 mr-3 shrink-0" /> info@demircansilaj.com.tr</div>
               </div>
             </div>
 

@@ -57,7 +57,7 @@ export default function AdminLogin() {
                 <input
                   type="email"
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-sm"
-                  placeholder="admin@demircansilaj.com"
+                  placeholder="admin@demircansilaj.com.tr"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

@@ -131,7 +131,7 @@ function printOrderReceipt(order) {
       
       <div class="footer">
         <p>Demircan Silaj — Premium Vakumlu Mısır Silajı ve Kaba Yem Üretimi</p>
-        <p>www.demircansilaj.com.tr | info@demircansilaj.com | +90 532 327 23 83</p>
+        <p>www.demircansilaj.com.tr | info@demircansilaj.com.tr | +90 532 327 23 83</p>
       </div>
     </body>
     </html>
