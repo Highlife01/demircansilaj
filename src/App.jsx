@@ -1516,9 +1516,9 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">İnteraktif Hesaplama Araçları</h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">{t('calculatorsPage.title')}</h1>
             <p className="text-lg text-gray-605 max-w-2xl mx-auto">
-              Çiftliğiniz için silaj ihtiyacı, nakliye/lojistik giderleri ve süt verimliliği artışını bilimsel rasyon verileriyle hesaplayın.
+              {t('calculatorsPage.subtitle')}
             </p>
           </div>
 
@@ -1529,20 +1529,20 @@ export default function App() {
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="bg-green-50 p-3 rounded-2xl text-green-600"><Calculator className="h-6 w-6" /></div>
-                  <h2 className="text-2xl font-bold text-gray-905">1. Silaj İhtiyaç Hesaplayıcı</h2>
+                  <h2 className="text-2xl font-bold text-gray-905">{t('calculatorsPage.calc1Title')}</h2>
                 </div>
                 <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                  Hayvan sayısı ve besleme süresine göre çiftliğinizin toplam kaba yem ihtiyacını ton bazında hesaplayın.
+                  {t('calculatorsPage.calc1Desc')}
                 </p>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Hayvan Türü</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">{t('calculatorsPage.animalType')}</label>
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { id: 'sut', label: 'Süt İneği', desc: '15 kg/gün' },
-                        { id: 'besi', label: 'Besi Danası', desc: '10 kg/gün' },
-                        { id: 'kucukbas', label: 'Küçükbaş', desc: '2 kg/gün' }
+                        { id: 'sut', label: t('calculatorsPage.cows').split(' (')[0], desc: t('calculatorsPage.cows').split('(')[1]?.replace(')', '') || '15 kg/gün' },
+                        { id: 'besi', label: t('calculatorsPage.beef').split(' (')[0], desc: t('calculatorsPage.beef').split('(')[1]?.replace(')', '') || '10 kg/gün' },
+                        { id: 'kucukbas', label: t('calculatorsPage.sheep').split(' (')[0], desc: t('calculatorsPage.sheep').split('(')[1]?.replace(')', '') || '2 kg/gün' }
                       ].map(type => (
                         <button
                           key={type.id}
@@ -1563,8 +1563,8 @@ export default function App() {
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm font-semibold text-gray-700">Hayvan Sayısı</label>
-                      <span className="text-sm font-extrabold text-green-700 bg-green-50 px-3 py-1 rounded-full">{animalCount} Adet</span>
+                      <label className="text-sm font-semibold text-gray-700">{t('calculatorsPage.animalCount')}</label>
+                      <span className="text-sm font-extrabold text-green-700 bg-green-50 px-3 py-1 rounded-full">{animalCount} {lang === 'tr' ? 'Adet' : 'Qty'}</span>
                     </div>
                     <input 
                       type="range" min="1" max="500" value={animalCount}
@@ -1575,8 +1575,8 @@ export default function App() {
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm font-semibold text-gray-700">Besleme Süresi</label>
-                      <span className="text-sm font-extrabold text-green-700 bg-green-50 px-3 py-1 rounded-full">{duration} Ay</span>
+                      <label className="text-sm font-semibold text-gray-700">{t('calculatorsPage.feedDuration')}</label>
+                      <span className="text-sm font-extrabold text-green-700 bg-green-50 px-3 py-1 rounded-full">{duration} {lang === 'tr' ? 'Ay' : 'Month'}</span>
                     </div>
                     <input 
                       type="range" min="1" max="12" value={duration}
@@ -1589,14 +1589,14 @@ export default function App() {
 
               <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-5 bg-green-50/40 p-6 rounded-2xl">
                 <div>
-                  <span className="text-xs text-green-800 font-bold uppercase tracking-wider">Hesaplanan İhtiyaç</span>
+                  <span className="text-xs text-green-800 font-bold uppercase tracking-wider">{t('calculatorsPage.calculatedNeed')}</span>
                   <p className="text-3xl font-extrabold text-green-900 mt-0.5">{requiredTons} Ton</p>
                 </div>
                 <button 
                   onClick={handleApplyCalculatedTons}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-all shadow-md shrink-0 w-full sm:w-auto text-center"
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-all shadow-md shrink-0 w-full sm:w-auto text-center cursor-pointer"
                 >
-                  Bu Miktarı Sipariş Formuna Aktar
+                  {t('calculatorsPage.applyBtn')}
                 </button>
               </div>
             </div>
@@ -1606,17 +1606,17 @@ export default function App() {
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="bg-yellow-50 p-3 rounded-2xl text-yellow-600"><TrendingUp className="h-6 w-6" /></div>
-                  <h2 className="text-2xl font-bold text-gray-905">2. Süt & Kazanç Artış Hesaplayıcı</h2>
+                  <h2 className="text-2xl font-bold text-gray-905">{t('calculatorsPage.calc2Title')}</h2>
                 </div>
                 <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                  İdeal kuru madde ve yüksek nişastalı Demircan Silajı ile elde edeceğiniz tahmini ek süt gelirini hesaplayın.
+                  {t('calculatorsPage.calc2Desc')}
                 </p>
 
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm font-semibold text-gray-700">Sağılan İnek Sayısı</label>
-                      <span className="text-sm font-extrabold text-yellow-700 bg-yellow-50/50 px-3 py-1 rounded-full">{milkingCows} Baş</span>
+                      <label className="text-sm font-semibold text-gray-700">{t('calculatorsPage.milkingCount')}</label>
+                      <span className="text-sm font-extrabold text-yellow-700 bg-yellow-50/50 px-3 py-1 rounded-full">{milkingCows} {lang === 'tr' ? 'Baş' : 'Qty'}</span>
                     </div>
                     <input 
                       type="range" min="1" max="200" value={milkingCows}
@@ -1627,7 +1627,7 @@ export default function App() {
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm font-semibold text-gray-700">Litre Süt Satış Fiyatı</label>
+                      <label className="text-sm font-semibold text-gray-700">{t('calculatorsPage.milkPrice')}</label>
                       <span className="text-sm font-extrabold text-yellow-700 bg-yellow-50/50 px-3 py-1 rounded-full">{milkPrice} ₺</span>
                     </div>
                     <input 
@@ -1641,15 +1641,15 @@ export default function App() {
 
               <div className="mt-8 pt-8 border-t border-gray-100 grid grid-cols-2 gap-4 bg-yellow-50/30 p-6 rounded-2xl">
                 <div>
-                  <span className="text-[10px] text-yellow-800 font-bold uppercase tracking-wider block">Günlük Süt Artışı</span>
-                  <span className="text-lg font-bold text-gray-900 mt-1 block">+{dailyMilkIncrease} Litre</span>
+                  <span className="text-[10px] text-yellow-800 font-bold uppercase tracking-wider block">{t('calculatorsPage.milkIncrease')}</span>
+                  <span className="text-lg font-bold text-gray-900 mt-1 block">+{dailyMilkIncrease} {lang === 'tr' ? 'Litre' : 'Liter'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-yellow-800 font-bold uppercase tracking-wider block">Aylık Ek Kazanç</span>
+                  <span className="text-[10px] text-yellow-800 font-bold uppercase tracking-wider block">{t('calculatorsPage.monthlyProfit')}</span>
                   <span className="text-lg font-bold text-gray-900 mt-1 block">+{monthlyProfit.toLocaleString('tr-TR')} ₺</span>
                 </div>
                 <div className="col-span-2 pt-3 border-t border-yellow-100 flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-yellow-900">YILLIK EK GELİR:</span>
+                  <span className="text-xs font-extrabold text-yellow-900">{t('calculatorsPage.annualProfit')}:</span>
                   <span className="text-xl font-black text-yellow-700 bg-white px-4 py-1.5 rounded-full shadow-sm">
                     +{annualProfit.toLocaleString('tr-TR')} ₺
                   </span>
@@ -1661,19 +1661,19 @@ export default function App() {
             <div className="bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-gray-100 lg:col-span-2">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-green-50 p-3 rounded-2xl text-green-600"><Truck className="h-6 w-6" /></div>
-                <h2 className="text-2xl font-bold text-gray-900">3. Maliyet ve Nakliye Hesaplayıcı</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('calculatorsPage.calc3Title')}</h2>
               </div>
               <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                Adana tesislerimizden çiftliğinizin bulunduğu ile yapılacak sevkiyat maliyetini ve toplam bütçeyi tahmin edin.
+                {t('calculatorsPage.calc3Desc')}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Çiftliğin Bulunduğu İl</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('calculatorsPage.selectProv')}</label>
                   <select 
                     value={selectedProvId}
                     onChange={(e) => setSelectedProvId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-gray-50 text-sm text-gray-700"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-gray-50 text-sm text-gray-700 cursor-pointer"
                   >
                     {provinces.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -1681,7 +1681,7 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">İstenen Miktar (Ton)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('calculatorsPage.reqQuantity')}</label>
                   <input 
                     type="number" min="5" max="500" value={tonnageInput}
                     onChange={(e) => setTonnageInput(Math.max(5, parseInt(e.target.value) || 0))}
@@ -1689,30 +1689,30 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Lojistik Mesafesi</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('calculatorsPage.distanceLabel')}</label>
                   <div className="px-4 py-3 bg-gray-100 rounded-xl text-sm font-bold text-gray-750">
-                    {activeProv.dist} km <span className="text-xs text-gray-400 font-normal">(Adana'dan)</span>
+                    {activeProv.dist} km <span className="text-xs text-gray-400 font-normal">({lang === 'tr' ? "Adana'dan" : "from Adana"})</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 bg-gray-55 p-6 rounded-2xl border border-gray-100">
                 <div className="p-4 bg-white rounded-xl shadow-sm">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Ürün Bedeli</span>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('calculatorsPage.productPrice')}</span>
                   <span className="text-lg font-extrabold text-gray-900 mt-1 block">{productCost.toLocaleString('tr-TR')} ₺</span>
                   <span className="text-[9px] text-gray-400 block mt-0.5">(5.500 ₺/Ton)</span>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Tahmini Nakliye</span>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('calculatorsPage.estShipping')}</span>
                   <span className="text-lg font-extrabold text-gray-900 mt-1 block">
-                    {shippingCost === 0 ? 'Mesafe Yok' : `${shippingCost.toLocaleString('tr-TR')} ₺`}
+                    {shippingCost === 0 ? t('calculatorsPage.noDistance') : `${shippingCost.toLocaleString('tr-TR')} ₺`}
                   </span>
                   <span className="text-[9px] text-gray-400 block mt-0.5">({activeProv.time})</span>
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl border border-green-100">
-                  <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider block">Toplam Bütçe</span>
+                  <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider block">{t('calculatorsPage.totalBudget')}</span>
                   <span className="text-lg font-black text-green-800 mt-1 block">{totalLogisticsCost.toLocaleString('tr-TR')} ₺</span>
-                  <span className="text-[9px] text-green-600 block mt-0.5">(* KDV & nakliye dahil tahminidir)</span>
+                  <span className="text-[9px] text-green-600 block mt-0.5">{t('calculatorsPage.budgetNotice')}</span>
                 </div>
               </div>
 
@@ -1726,9 +1726,9 @@ export default function App() {
                     });
                     navigateTo('/iletisim-ve-siparis');
                   }}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 duration-300"
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 duration-300 cursor-pointer"
                 >
-                  {activeProv.name} İli İçin Resmi Teklif İste
+                  {t('calculatorsPage.getQuoteBtn').replace('{0}', activeProv.name)}
                 </button>
               </div>
             </div>
@@ -1746,9 +1746,9 @@ export default function App() {
     if (!prov) {
       return (
         <div className="pt-40 pb-32 text-center bg-gray-55 min-h-screen">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Sayfa Bulunamadı</h1>
-          <p className="text-gray-600 mb-8">Aradığınız bölgeye ait özel sayfa sistemde mevcut değil.</p>
-          <button onClick={() => navigateTo('/')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Ana Sayfaya Dön</button>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">{lang === 'tr' ? 'Sayfa Bulunamadı' : 'Page Not Found'}</h1>
+          <p className="text-gray-600 mb-8">{lang === 'tr' ? 'Aradığınız bölgeye ait özel sayfa sistemde mevcut değil.' : 'The requested page for this province does not exist in the system.'}</p>
+          <button onClick={() => navigateTo('/')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold cursor-pointer">{lang === 'tr' ? 'Ana Sayfaya Dön' : 'Back to Home'}</button>
         </div>
       );
     }
@@ -1769,13 +1769,15 @@ export default function App() {
              </div>
              <div className="relative z-10 max-w-4xl">
                 <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold tracking-wide mb-6">
-                  BÖLGESEL HİZMET & LOJİSTİK
+                  {lang === 'tr' ? 'BÖLGESEL HİZMET & LOJİSTİK' : 'REGIONAL SERVICE & LOGISTICS'}
                 </span>
                 <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
-                  {prov.name} Mısır Silajı Fiyatları ve Satışı
+                  {lang === 'tr' ? `${prov.name} Mısır Silajı Fiyatları ve Satışı` : `${prov.name} Corn Silage Prices & Sales`}
                 </h1>
                 <p className="text-base md:text-lg text-green-100 max-w-3xl mx-auto font-light leading-relaxed">
-                  Adana tesislerimizden {prov.name} genelindeki tüm çiftlik, kooperatif ve işletmelere doğrudan tır ve kamyon bazlı vakumlu mısır silajı sevkiyatı yapıyoruz.
+                  {lang === 'tr' 
+                    ? `Adana tesislerimizden ${prov.name} genelindeki tüm çiftlik, kooperatif ve işletmelere doğrudan tır ve kamyon bazlı vakumlu mısır silajı sevkiyatı yapıyoruz.`
+                    : `We ship vacuumed corn silage directly on a truck and lorry basis from our Adana facilities to all farms, cooperatives, and businesses throughout ${prov.name}.`}
                 </p>
              </div>
           </div>
@@ -1786,16 +1788,22 @@ export default function App() {
             <div className="lg:col-span-1">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <span className="bg-green-100 p-2 rounded-xl text-green-600"><Star className="h-5 w-5 fill-current" /></span>
-                Bölgesel Rasyon Desteği
+                {lang === 'tr' ? 'Bölgesel Rasyon Desteği' : 'Regional Ration Support'}
               </h2>
-              <p className="text-gray-650 text-sm leading-relaxed mb-6">
-                {prov.name} ilinde kayıtlı yaklaşık <strong>{prov.cattle.toLocaleString('tr-TR')} büyükbaş</strong> ve <strong>{prov.sheep.toLocaleString('tr-TR')} küçükbaş</strong> hayvan kapasitesi bulunmakta olup kaba yem rasyonu besi kalitesini doğrudan etkiler.
+              <p className="text-gray-655 text-sm leading-relaxed mb-6">
+                {lang === 'tr'
+                  ? `${prov.name} ilinde kayıtlı yaklaşık ${prov.cattle.toLocaleString('tr-TR')} büyükbaş ve ${prov.sheep.toLocaleString('tr-TR')} küçükbaş hayvan kapasitesi bulunmakta olup kaba yem rasyonu besi kalitesini doğrudan etkiler.`
+                  : `There is a registered capacity of approximately ${prov.cattle.toLocaleString('en-US')} cattle and ${prov.sheep.toLocaleString('en-US')} sheep in the province of ${prov.name}, and the roughage ration directly affects fattening quality.`}
               </p>
               <p className="text-gray-655 text-sm leading-relaxed mb-8">
-                Demircan Silaj, ideal %30-35 kuru madde oranı ve 3.8-4.1 pH dengesi ile hayvanlarınızın sindirim sistemini korur, rasyonel verimliliği artırarak rasyon giderlerinizi en aza indirir.
+                {lang === 'tr'
+                  ? 'Demircan Silaj, ideal %30-35 kuru madde oranı ve 3.8-4.1 pH dengesi ile hayvanlarınızın sindirim sistemini korur, rasyonel verimliliği artırarak rasyon giderlerinizi en aza indirir.'
+                  : 'Demircan Silage protects the digestive system of your animals with an ideal 30-35% dry matter ratio and 3.8-4.1 pH balance, maximizing efficiency and minimizing ration expenses.'}
               </p>
               <div className="bg-gray-55 border-l-4 border-yellow-500 p-5 rounded-r-2xl text-xs font-medium text-gray-700 italic leading-relaxed">
-                "Kaba yem kalitesi, rasyondaki konsantre yem ihtiyacını azaltarak maliyetleri %20'ye kadar düşürür. Adana'dan yola çıkan filomuz en geç {prov.time} içinde kapınızdadır."
+                {lang === 'tr'
+                  ? `"Kaba yem kalitesi, rasyondaki konsantre yem ihtiyacını azaltarak maliyetleri %20'ye kadar düşürür. Adana'dan yola çıkan filomuz en geç ${prov.time} içinde kapınızdadır."`
+                  : `"Roughage quality reduces the need for concentrate feed in the ration, lowering costs by up to 20%. Our fleet departing from Adana will be at your door within ${prov.time} at the latest."`}
               </div>
             </div>
 
@@ -1808,7 +1816,7 @@ export default function App() {
                   className="w-full h-full object-cover" 
                 />
                 <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-xl text-white text-xs font-medium text-center">
-                  Mısır Koçanı Olgunluk Kontrolü
+                  {lang === 'tr' ? 'Mısır Koçanı Olgunluk Kontrolü' : 'Corn Cob Ripeness Check'}
                 </div>
               </div>
             </div>
@@ -1817,36 +1825,36 @@ export default function App() {
             <div className="lg:col-span-1 space-y-6">
               <div className="bg-green-50/50 border border-green-100 p-6 rounded-2xl">
                 <h3 className="font-bold text-green-900 text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
-                  <Truck className="h-4.5 w-4.5" /> Lojistik Bilgi Tablosu
+                  <Truck className="h-4.5 w-4.5" /> {lang === 'tr' ? 'Lojistik Bilgi Tablosu' : 'Logistics Information Table'}
                 </h3>
                 <ul className="space-y-3.5 text-xs">
                   <li className="flex justify-between border-b border-green-100/50 pb-2.5">
-                    <span className="text-gray-500">Mesafe (Adana'dan):</span>
+                    <span className="text-gray-505">{lang === 'tr' ? "Mesafe (Adana'dan):" : 'Distance (from Adana):'}</span>
                     <span className="font-bold text-gray-900">{prov.dist} km</span>
                   </li>
                   <li className="flex justify-between border-b border-green-100/50 pb-2.5">
-                    <span className="text-gray-500">Tahmini Nakliye Süresi:</span>
+                    <span className="text-gray-505">{lang === 'tr' ? 'Tahmini Nakliye Süresi:' : 'Estimated Shipping Time:'}</span>
                     <span className="font-bold text-gray-900">{prov.time}</span>
                   </li>
                   <li className="flex justify-between border-b border-green-100/50 pb-2.5">
-                    <span className="text-gray-500">Gönderim Seçenekleri:</span>
-                    <span className="font-bold text-gray-900">Vakumlu Balyalı veya Dökme</span>
+                    <span className="text-gray-505">{lang === 'tr' ? 'Gönderim Seçenekleri:' : 'Shipping Options:'}</span>
+                    <span className="font-bold text-gray-900">{lang === 'tr' ? 'Vakumlu Balyalı veya Dökme' : 'Vacuum Baled or Bulk'}</span>
                   </li>
                   <li className="flex justify-between">
-                    <span className="text-gray-500">Minimum Sipariş:</span>
-                    <span className="font-bold text-gray-900">10-15 Ton (Kamyon Bazlı)</span>
+                    <span className="text-gray-505">{lang === 'tr' ? 'Minimum Sipariş:' : 'Minimum Order:'}</span>
+                    <span className="font-bold text-gray-900">{lang === 'tr' ? '10-15 Ton (Kamyon Bazlı)' : '10-15 Tons (Truck Based)'}</span>
                   </li>
                 </ul>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white shadow-md border border-gray-150 p-5 rounded-2xl text-center">
-                  <div className="text-2xl font-black text-green-700 mb-1">{prov.cattle > 100000 ? `${Math.floor(prov.cattle/1000)}k+` : prov.cattle.toLocaleString('tr-TR')}</div>
-                  <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Büyükbaş Hayvan</div>
+                  <div className="text-2xl font-black text-green-700 mb-1">{prov.cattle > 100000 ? `${Math.floor(prov.cattle/1000)}k+` : prov.cattle.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US')}</div>
+                  <div className="text-[9px] font-bold text-gray-405 uppercase tracking-wider">{lang === 'tr' ? 'Büyükbaş Hayvan' : 'Cattle'}</div>
                 </div>
                 <div className="bg-white shadow-md border border-gray-150 p-5 rounded-2xl text-center">
-                  <div className="text-2xl font-black text-green-700 mb-1">{prov.sheep > 100000 ? `${Math.floor(prov.sheep/1000)}k+` : prov.sheep.toLocaleString('tr-TR')}</div>
-                  <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Küçükbaş Hayvan</div>
+                  <div className="text-2xl font-black text-green-700 mb-1">{prov.sheep > 100000 ? `${Math.floor(prov.sheep/1000)}k+` : prov.sheep.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US')}</div>
+                  <div className="text-[9px] font-bold text-gray-405 uppercase tracking-wider">{lang === 'tr' ? 'Küçükbaş Hayvan' : 'Sheep'}</div>
                 </div>
               </div>
             </div>
@@ -1854,30 +1862,46 @@ export default function App() {
 
           {/* Region-Specific FAQ */}
           <div className="bg-gray-55 rounded-3xl p-8 md:p-12 mb-16 border border-gray-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">{prov.name} İçin Sık Sorulan Sorular</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">{lang === 'tr' ? `${prov.name} İçin Sık Sorulan Sorular` : `Frequently Asked Questions for ${prov.name}`}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h4 className="font-bold text-gray-850 text-sm mb-2">1. {prov.name} teslimatlarında kargo/nakliye nasıl ücretlendirilir?</h4>
+                <h4 className="font-bold text-gray-850 text-sm mb-2">
+                  {lang === 'tr' ? `1. ${prov.name} teslimatlarında kargo/nakliye nasıl ücretlendirilir?` : `1. How is shipping priced for deliveries to ${prov.name}?`}
+                </h4>
                 <p className="text-gray-500 text-xs leading-relaxed">
-                  Nakliye ücreti Adana depomuzdan {prov.name} ilindeki teslimat adresinize olan {prov.dist} km'lik karayolu mesafesi ve sipariş ettiğiniz tonaj miktarına göre tır veya kamyon bazında hesaplanarak net teklifimize yansıtılır.
+                  {lang === 'tr'
+                    ? `Nakliye ücreti Adana depomuzdan ${prov.name} ilindeki teslimat adresinize olan ${prov.dist} km'lik karayolu mesafesi ve sipariş ettiğiniz tonaj miktarına göre tır veya kamyon bazında hesaplanarak net teklifimize yansıtılır.`
+                    : `Shipping fees are calculated based on the road distance of ${prov.dist} km from our Adana warehouse to your delivery address in ${prov.name} and the tonnage of your order.`}
                 </p>
               </div>
               <div>
-                <h4 className="font-bold text-gray-850 text-sm mb-2">2. {prov.name} bölgesinde kış aylarında silaj donar mı veya bozulur mu?</h4>
+                <h4 className="font-bold text-gray-850 text-sm mb-2">
+                  {lang === 'tr' ? `2. ${prov.name} bölgesinde kış aylarında silaj donar mı veya bozulur mu?` : `2. Does silage freeze or spoil in winter in the ${prov.name} region?`}
+                </h4>
                 <p className="text-gray-500 text-xs leading-relaxed">
-                  Özel vakumlu rulo balya teknolojimiz sayesinde ürünler hava almaz. Bu yüzden nem dengesi korunur ve kış donlarından ya da yaz sıcaklarından etkilenmeden 24 ay boyunca besin değerini korur.
+                  {lang === 'tr'
+                    ? 'Özel vakumlu rulo balya teknolojimiz sayesinde ürünler hava almaz. Bu yüzden nem dengesi korunur ve kış donlarından ya da yaz sıcaklarından etkilenmeden 24 ay boyunca besin değerini korur.'
+                    : 'Thanks to our special vacuumed round bale technology, the products do not breathe. Therefore, moisture balance is maintained and nutritional value is preserved for 24 months without being affected by winter frosts or summer heat.'}
                 </p>
               </div>
               <div>
-                <h4 className="font-bold text-gray-850 text-sm mb-2">3. Siparişi vermeden önce numune alabilir miyiz?</h4>
+                <h4 className="font-bold text-gray-850 text-sm mb-2">
+                  {lang === 'tr' ? '3. Siparişi vermeden önce numune alabilir miyiz?' : '3. Can we request a sample before ordering?'}
+                </h4>
                 <p className="text-gray-500 text-xs leading-relaxed">
-                  Toptan alımlarda firmamızla iletişime geçerek laboratuvar analiz raporlarımızı inceleyebilir ve talep etmeniz halinde numune paketi sevkiyatını görüşebilirsiniz.
+                  {lang === 'tr'
+                    ? 'Toptan alımlarda firmamızla iletişime geçerek laboratuvar analiz raporlarımızı inceleyebilir ve talep etmeniz halinde numune paketi sevkiyatını görüşebilirsiniz.'
+                    : 'For wholesale purchases, you can contact us to examine our laboratory analysis reports and discuss sample package shipments if requested.'}
                 </p>
               </div>
               <div>
-                <h4 className="font-bold text-gray-850 text-sm mb-2">4. Ödeme koşulları nasıldır?</h4>
+                <h4 className="font-bold text-gray-850 text-sm mb-2">
+                  {lang === 'tr' ? '4. Ödeme koşulları nasıldır?' : '4. What are the payment terms?'}
+                </h4>
                 <p className="text-gray-500 text-xs leading-relaxed">
-                  Toptan silaj alımlarında ödeme koşulları ve vade durumları tonaja bağlı olarak karşılıklı görüşülür. Sipariş onayı sonrasında nakliye ve yükleme planlanır.
+                  {lang === 'tr'
+                    ? 'Toptan silaj alımlarında ödeme koşulları ve vade durumları tonaja bağlı olarak karşılıklı görüşülür. Sipariş onayı sonrasında nakliye ve yükleme planlanır.'
+                    : 'For wholesale silage purchases, payment terms and maturity status are discussed mutually depending on the tonnage. Shipping and loading are planned after order confirmation.'}
                 </p>
               </div>
             </div>
@@ -1885,8 +1909,8 @@ export default function App() {
 
           <div className="text-center bg-green-955 rounded-2xl p-8 text-white flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-left">
-              <h4 className="text-lg font-bold">{prov.name} Bölgesine Özel Fiyat Teklifi Alın</h4>
-              <p className="text-xs text-green-200/90 mt-1 font-light">Lojistik avantajlı ton fiyatlarımızı öğrenmek ve sipariş planlamak için formumuzu kullanabilirsiniz.</p>
+              <h4 className="text-lg font-bold">{lang === 'tr' ? `${prov.name} Bölgesine Özel Fiyat Teklifi Alın` : `Get a Special Quote for ${prov.name} Region`}</h4>
+              <p className="text-xs text-green-200/90 mt-1 font-light">{lang === 'tr' ? 'Lojistik avantajlı ton fiyatlarımızı öğrenmek ve sipariş planlamak için formumuzu kullanabilirsiniz.' : 'You can use our form to learn our logistically advantageous prices and plan your order.'}</p>
             </div>
             <div className="flex gap-4">
               <button 
@@ -1894,9 +1918,9 @@ export default function App() {
                   setSelectedProvId(prov.id);
                   navigateTo('/hesaplama-araclari');
                 }} 
-                className="bg-white/10 hover:bg-white/20 text-white border border-white/25 px-5 py-3 rounded-xl font-bold text-sm transition-all"
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/25 px-5 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer"
               >
-                Maliyet Hesapla
+                {lang === 'tr' ? 'Maliyet Hesapla' : 'Calculate Cost'}
               </button>
               <button 
                 onClick={() => {
@@ -1906,9 +1930,9 @@ export default function App() {
                   });
                   navigateTo('/iletisim-ve-siparis');
                 }} 
-                className="bg-green-600 hover:bg-green-500 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all"
+                className="bg-green-600 hover:bg-green-500 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer"
               >
-                Hemen Sipariş Ver
+                {lang === 'tr' ? 'Hemen Sipariş Ver' : 'Order Now'}
               </button>
             </div>
           </div>
