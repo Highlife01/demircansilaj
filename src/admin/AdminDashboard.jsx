@@ -468,17 +468,7 @@ export default function AdminDashboard({ user }) {
           <StatCard icon={<TrendingUp className="h-6 w-6 text-fuchsia-300" />} accent="bg-fuchsia-500/15 border border-fuchsia-500/20" label="Tahmini Ciro" value={`${stats.revenue.toLocaleString('tr-TR')} ₺`} />
         </div>
 
-        {/* Canlı akış + grafikler */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
-          <div className="xl:col-span-1">
-            <LiveFeed feed={feed} onOpenOrder={setSelectedOrder} onGoMessages={() => setTab('messages')} />
-          </div>
-          <div className="xl:col-span-2">
-            {!loading && orders.length > 0
-              ? <DashboardCharts orders={orders} />
-              : <div className="h-full rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-gray-500 text-sm py-16">Grafikler için henüz yeterli veri yok.</div>}
-          </div>
-        </div>
+
 
         {/* Sekmeler + Arama */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -508,6 +498,12 @@ export default function AdminDashboard({ user }) {
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'companies' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
               <User className="h-4 w-4" /> Firmalar & Stok
+            </button>
+            <button
+              onClick={() => setTab('analytics')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'analytics' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              <TrendingUp className="h-4 w-4" /> Analizler
             </button>
           </div>
 
@@ -581,7 +577,14 @@ export default function AdminDashboard({ user }) {
             <Loader2 className="h-6 w-6 animate-spin mr-3" /> Sinyal alınıyor...
           </div>
         ) : tab === 'orders' ? (
-          <OrdersList orders={filteredOrders} onStatus={setOrderStatus} onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} onOpen={setSelectedOrder} />
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+              <OrdersList orders={filteredOrders} onStatus={setOrderStatus} onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} onOpen={setSelectedOrder} />
+            </div>
+            <div className="lg:col-span-1">
+              <LiveFeed feed={feed} onOpenOrder={setSelectedOrder} onGoMessages={() => setTab('messages')} />
+            </div>
+          </div>
         ) : tab === 'messages' ? (
           <MessagesList messages={filteredMessages} onRead={markMessageRead} onDelete={(id) => removeDoc(MESSAGES_COLLECTION, id)} />
         ) : tab === 'testimonials' ? (
@@ -591,7 +594,7 @@ export default function AdminDashboard({ user }) {
             onDelete={(id) => removeDoc(TESTIMONIALS_COLLECTION, id)}
             onAddClick={() => setShowAddTestimonial(true)} 
           />
-        ) : (
+        ) : tab === 'companies' ? (
           <CompaniesList
             companies={companies}
             onDelete={(id) => removeDoc(COMPANIES_COLLECTION, id)}
@@ -603,6 +606,19 @@ export default function AdminDashboard({ user }) {
             onUpdateStock={handleUpdateCompanyStock}
             savingStock={savingStock}
           />
+        ) : (
+          <div className="space-y-6">
+            {orders.length > 0 ? (
+              <div className="space-y-6">
+                <DashboardCharts orders={orders} />
+                <OrderStatsBreakdown orders={orders} />
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center text-gray-500 text-sm py-16">
+                Grafikler için henüz yeterli veri yok.
+              </div>
+            )}
+          </div>
         )}
       </main>
 
@@ -1184,6 +1200,75 @@ function CompaniesList({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function OrderStatsBreakdown({ orders }) {
+  const breakdown = useMemo(() => {
+    const counts = { new: 0, contacted: 0, completed: 0, cancelled: 0 };
+    orders.forEach(o => {
+      const s = o.status || 'new';
+      if (s in counts) counts[s]++;
+    });
+    const total = orders.length || 1;
+    return Object.entries(counts).map(([status, val]) => {
+      const label = status === 'new' ? 'Yeni' : status === 'contacted' ? 'Görüşüldü' : status === 'completed' ? 'Tamamlandı' : 'İptal';
+      const color = status === 'new' ? 'bg-cyan-500' : status === 'contacted' ? 'bg-amber-500' : status === 'completed' ? 'bg-emerald-500' : 'bg-rose-500';
+      const textColor = status === 'new' ? 'text-cyan-400' : status === 'contacted' ? 'text-amber-400' : status === 'completed' ? 'text-emerald-400' : 'text-rose-400';
+      return {
+        status,
+        label,
+        count: val,
+        pct: Math.round((val / total) * 100),
+        color,
+        textColor
+      };
+    });
+  }, [orders]);
+
+  const totalTons = useMemo(() => orders.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0), [orders]);
+  const avgTons = useMemo(() => orders.length ? Math.round(totalTons / orders.length) : 0, [orders, totalTons]);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+      {/* Metrik Kartı 1: Toplam Tonaj */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col justify-between">
+        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Toplam Talep Hacmi</span>
+        <div className="my-4">
+          <span className="text-3xl font-black text-white">{totalTons.toLocaleString('tr-TR')}</span>
+          <span className="text-xs text-gray-500 ml-1.5">Ton Mısır Silajı</span>
+        </div>
+        <span className="text-[10px] text-gray-500 block">Tüm kayıtlı sipariş taleplerinin toplamı</span>
+      </div>
+
+      {/* Metrik Kartı 2: Ortalama Sipariş Boyutu */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col justify-between">
+        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Ortalama Sipariş Hacmi</span>
+        <div className="my-4">
+          <span className="text-3xl font-black text-white">{avgTons}</span>
+          <span className="text-xs text-gray-500 ml-1.5">Ton / Sipariş</span>
+        </div>
+        <span className="text-[10px] text-gray-500 block">Sipariş başına ortalama talep tonajı</span>
+      </div>
+
+      {/* Metrik Kartı 3: Durum Dağılımları */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-4">Sipariş Durum Dağılımları</span>
+        <div className="space-y-3">
+          {breakdown.map(item => (
+            <div key={item.status} className="space-y-1">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-gray-300">{item.label}</span>
+                <span className={`font-bold ${item.textColor}`}>{item.count} Adet (%{item.pct})</span>
+              </div>
+              <div className="h-2 w-full bg-white/[0.04] rounded-full overflow-hidden">
+                <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.pct}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Menu, X, ChevronRight, Phone, Mail, MapPin, 
   Leaf, ShieldCheck, Truck, Star, CheckCircle, 
-  Package, Info, ArrowRight, Quote, MessageCircle, Play,
+  Package, Info, ArrowRight, Quote, MessageCircle, MessageSquare, Play,
   Send, Loader2, AlertCircle, Calculator, TrendingUp
 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
@@ -93,6 +93,99 @@ export default function App() {
   // FAQ state
   const [openFaq, setOpenFaq] = useState(null);
   const [activeSpecProduct, setActiveSpecProduct] = useState(null);
+
+  // Chatbot states
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([
+    { 
+      sender: 'bot', 
+      text: lang === 'tr' 
+        ? 'Merhaba! Ben Demircan Silaj yapay zekâ asistanıyım. Size silaj ürünlerimiz, fiyatlarımız, kalite standartlarımız veya nakliye koşullarımız hakkında nasıl yardımcı olabilirim?' 
+        : 'Hello! I am the Demircan Silage AI assistant. How can I help you regarding our silage products, prices, quality standards, or logistics?'
+    }
+  ]);
+
+  useEffect(() => {
+    if (chatMessages.length === 1) {
+      setChatMessages([
+        { 
+          sender: 'bot', 
+          text: lang === 'tr' 
+            ? 'Merhaba! Ben Demircan Silaj yapay zekâ asistanıyım. Size silaj ürünlerimiz, fiyatlarımız, kalite standartlarımız veya nakliye koşullarımız hakkında nasıl yardımcı olabilirim?' 
+            : 'Hello! I am the Demircan Silage AI assistant. How can I help you regarding our silage products, prices, quality standards, or logistics?'
+        }
+      ]);
+    }
+  }, [lang, chatMessages.length]);
+
+  const getChatSuggestions = () => {
+    return lang === 'tr'
+      ? ['Güncel Fiyat Ne Kadar?', 'Analiz Değerleri Nedir?', 'Nakliye ve Teslimat?', 'Nasıl Sipariş Verilir?']
+      : ['What is the Price?', 'What are the Specs?', 'Shipping & Delivery?', 'How to Order?'];
+  };
+
+  const handleSendChatMessage = (text) => {
+    if (!text.trim()) return;
+    
+    const userMsg = { sender: 'user', text };
+    setChatMessages(prev => [...prev, userMsg]);
+    
+    setTimeout(() => {
+      const container = document.getElementById('chat-messages-container');
+      if (container) container.scrollTop = container.scrollHeight;
+    }, 50);
+
+    setTimeout(() => {
+      let botResponse = '';
+      const t = text.toLowerCase();
+      
+      if (t.includes('fiyat') || t.includes('price') || t.includes('ne kadar') || t.includes('kaç') || t.includes('kac') || t.includes('para') || t.includes('maliyet') || t.includes('cost')) {
+        botResponse = lang === 'tr'
+          ? "Mısır silajımızın ton fiyatı güncel olarak 5.500 ₺'dir. Siparişleriniz Adana fabrikamızdan tır (25 ton) veya kamyon (10-15 ton) bazında kapınıza sevk edilir."
+          : "Our corn silage ton price is currently 5,500 ₺. Orders are shipped from our Adana factory by trucks (25 tons) or lorries (10-15 tons) directly to your door.";
+      } else if (t.includes('kalite') || t.includes('analiz') || t.includes('protein') || t.includes('km') || t.includes('spec') || t.includes('değer') || t.includes('deger') || t.includes('laboratuvar')) {
+        botResponse = lang === 'tr'
+          ? "Silajımız ideal %32-35 Kuru Madde (KM) ve 3.8 - 4.1 pH oranına sahiptir. Sindirilebilirlik oranımız %72-75 olup, koçan dane ezme seviyemiz süt verimini doğrudan artırır. Detaylı analiz tablomuzu 'Ürünlerimiz' sayfasındaki 'Teknik Bilgi' kısmında görebilirsiniz."
+          : "Our silage has 32-35% Dry Matter and 3.8-4.1 pH levels. Digestibility is 72-75%, directly increasing milk yield. You can see full specification values under 'Specs & Lab' on the Products page.";
+      } else if (t.includes('neresi') || t.includes('fabrika') || t.includes('nerede') || t.includes('adana') || t.includes('konum') || t.includes('yer') || t.includes('location')) {
+        botResponse = lang === 'tr'
+          ? "Üretim tesisimiz Adana Organize Tarım Bölgesi'ndedir. Türkiye'nin her yerine nakliyemiz vardır."
+          : "Our production facility is in Adana Organized Agriculture Zone. We offer shipping throughout Turkey.";
+      } else if (t.includes('nakliye') || t.includes('lojistik') || t.includes('sevkiyat') || t.includes('teslimat') || t.includes('kargo') || t.includes('tır') || t.includes('kamyon') || t.includes('shipping') || t.includes('delivery')) {
+        botResponse = lang === 'tr'
+          ? "Adana fabrikamızdan Türkiye geneline kendi anlaşmalı lojistik ağımız ile teslimat yapıyoruz. Nakliye maliyeti mesafeye göre hesaplanır. Hesaplama Araçları sayfamızdan ilinizi seçerek tahmini nakliye bedelini hesaplayabilirsiniz."
+          : "We deliver throughout Turkey using our logistics network from our Adana factory. Shipping is calculated based on distance. You can estimate shipping cost on the Calculators page.";
+      } else if (t.includes('sipariş') || t.includes('siparis') || t.includes('nasıl') || t.includes('nasil') || t.includes('talep') || t.includes('satın') || t.includes('satin') || t.includes('order')) {
+        botResponse = lang === 'tr'
+          ? "Sipariş veya fiyat teklifi talebi oluşturmak için 'İletişim & Sipariş' sayfamızdaki teklif formunu doldurabilir veya WhatsApp butonuna tıklayarak doğrudan bizimle konuşabilirsiniz."
+          : "To place an order or request a quote, you can fill in the form on 'Contact & Order' page or click the WhatsApp button to chat directly.";
+      } else if (t.includes('merhaba') || t.includes('selam') || t.includes('hello') || t.includes('hi')) {
+        botResponse = lang === 'tr'
+          ? "Merhaba! Size yardımcı olmaktan memnuniyet duyarım. Silaj ürünleri, analizler veya nakliye hakkında aklınıza takılanları sorabilirsiniz."
+          : "Hello! I am happy to help you. Ask me anything about our silage products, specifications, or logistics.";
+      } else {
+        botResponse = lang === 'tr'
+          ? "Sorunuzu tam anlayamadım ama silaj fiyatımız ton başına 5.500 ₺'dir. Ürün analizlerimiz %32-35 kuru madde içerir. Detaylı bilgi veya nakliye hesaplaması için lütfen üst menüdeki 'Hesaplama Araçları' veya 'İletişim' sayfamızı ziyaret edin."
+          : "I couldn't fully understand your question. Our silage price is 5,500 ₺/ton and contains 32-35% dry matter. For details or shipping rates, please visit the 'Calculators' or 'Contact' page.";
+      }
+
+      setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
+      
+      setTimeout(() => {
+        const container = document.getElementById('chat-messages-container');
+        if (container) container.scrollTop = container.scrollHeight;
+      }, 50);
+    }, 800);
+  };
+
+  const handleChatSubmit = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    const text = chatInput;
+    setChatInput('');
+    handleSendChatMessage(text);
+  };
 
   // Product Pricing (per ton)
   const productPrices = {
@@ -1586,9 +1679,23 @@ export default function App() {
     const [milkingCows, setMilkingCows] = useState(30);
     const [milkPrice, setMilkPrice] = useState(15); // ₺/Liter
 
+    // ROI Calculator state
+    const [roiAnimals, setRoiAnimals] = useState(50);
+    const [concentrateCost, setConcentrateCost] = useState(120);
+    const [forageCost, setForageCost] = useState(60);
+
     // Silage need calculation
     const dailyConsumption = calcType === 'sut' ? 15 : calcType === 'besi' ? 10 : 2;
     const requiredTons = Math.ceil((animalCount * dailyConsumption * 30 * duration) / 1000);
+
+    // ROI Calculations
+    const dailyCurrentCost = roiAnimals * (concentrateCost + forageCost);
+    const dailyNewCost = roiAnimals * (concentrateCost * 0.70 + 82.5); // 15kg silage * 5.5 ₺ = 82.5 ₺. Concentrate reduces by 30%
+    const dailySavings = Math.max(0, Math.ceil(dailyCurrentCost - dailyNewCost));
+    const dailyExtraMilkIncome = Math.ceil(roiAnimals * 2.5 * milkPrice);
+    const totalDailyRoiProfit = dailySavings + dailyExtraMilkIncome;
+    const monthlyRoiProfit = totalDailyRoiProfit * 30;
+    const paybackDays = totalDailyRoiProfit > 0 ? Math.ceil(137500 / totalDailyRoiProfit) : 0;
 
     // Logistics calculation
     const activeProv = provinces.find(p => p.id === selectedProvId) || provinces[0];
@@ -1834,6 +1941,86 @@ export default function App() {
                 >
                   {t('calculatorsPage.getQuoteBtn').replace('{0}', activeProv.name)}
                 </button>
+              </div>
+            </div>
+
+            {/* 4. Rasyon Tasarruf & ROI Analizi (Full Width) */}
+            <div className="bg-[#0b1220] text-white rounded-3xl p-8 md:p-10 shadow-xl border border-white/10 lg:col-span-2 text-left">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400"><TrendingUp className="h-6 w-6" /></div>
+                <h2 className="text-2xl font-bold text-white">{lang === 'tr' ? 'Rasyon & ROI Tasarruf Analizörü' : 'Ration & ROI Savings Analyzer'}</h2>
+              </div>
+              <p className="text-sm text-gray-400 mb-8 leading-relaxed">
+                {lang === 'tr' 
+                  ? 'Premium vakumlu mısır silajımız, yüksek sindirilebilir lif ve nişasta oranı sayesinde rasyonunuzdaki pahalı konsantre (fabrika) yem oranını %30\'a kadar düşürürken, süt verimini artırır. Aşağıdan çiftlik verilerinizi girerek tasarrufunuzu hesaplayın.' 
+                  : 'Our premium vacuumed corn silage reduces expensive concentrate feed by up to 30% and increases milk yield due to high digestible fiber and starch. Input your farm data below to see your net profit.'}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'tr' ? 'Sağılan Hayvan Sayısı' : 'Milking Animals Qty'}</label>
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">{roiAnimals}</span>
+                  </div>
+                  <input 
+                    type="range" min="10" max="500" value={roiAnimals}
+                    onChange={(e) => setRoiAnimals(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'tr' ? 'Günlük Konsantre Yem (₺/Hayvan)' : 'Daily Concentrate Cost (₺/Cow)'}</label>
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">{concentrateCost} ₺</span>
+                  </div>
+                  <input 
+                    type="range" min="50" max="250" value={concentrateCost}
+                    onChange={(e) => setConcentrateCost(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'tr' ? 'Mevcut Günlük Kaba Yem (₺/Hayvan)' : 'Current Forage Cost (₺/Cow)'}</label>
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">{forageCost} ₺</span>
+                  </div>
+                  <input 
+                    type="range" min="20" max="150" value={forageCost}
+                    onChange={(e) => setForageCost(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
+                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Günlük Yem Tasarrufu' : 'Daily Feed Savings'}</span>
+                  <span className={`text-lg font-extrabold mt-1 block ${dailySavings > 0 ? 'text-emerald-400' : 'text-yellow-500'}`}>
+                    {dailySavings.toLocaleString('tr-TR')} ₺
+                  </span>
+                  <span className="text-[9px] text-gray-550 block mt-0.5">%30 konsantre yem ikamesi</span>
+                </div>
+                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Günlük Ek Süt Geliri' : 'Daily Extra Milk Income'}</span>
+                  <span className="text-lg font-extrabold text-emerald-400 mt-1 block">
+                    {dailyExtraMilkIncome.toLocaleString('tr-TR')} ₺
+                  </span>
+                  <span className="text-[9px] text-gray-550 block mt-0.5">+{roiAnimals * 2.5} Litre / gün (+2.5L verim)</span>
+                </div>
+                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Aylık Ekstra Kâr' : 'Monthly Net Profit'}</span>
+                  <span className="text-lg font-extrabold text-emerald-400 mt-1 block">
+                    {monthlyRoiProfit.toLocaleString('tr-TR')} ₺
+                  </span>
+                  <span className="text-[9px] text-gray-550 block mt-0.5">{lang === 'tr' ? 'Toplam ek kazanç & tasarruf' : 'Total profit & savings'}</span>
+                </div>
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Amortisman Süresi (1 Tır)' : 'Payback Period (1 Truck)'}</span>
+                  <span className="text-lg font-black text-emerald-400 mt-1 block">
+                    {paybackDays} {lang === 'tr' ? 'Gün' : 'Days'}
+                  </span>
+                  <span className="text-[9px] text-emerald-500/70 block mt-0.5">25 Ton yatırımın kendini geri ödeme süresi</span>
+                </div>
               </div>
             </div>
 
@@ -2294,25 +2481,108 @@ export default function App() {
         </div>
       )}
 
-      {/* Floating WhatsApp Button */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center justify-center">
-        <span className="absolute inline-flex h-14 w-14 rounded-full bg-green-400 opacity-75 animate-ping"></span>
-        <a 
-          href={`https://wa.me/905323272383?text=${encodeURIComponent(
-            lang === 'tr' 
-              ? 'Merhaba, mısır silajı fiyatları ve teslimat hakkında bilgi alabilir miyim?' 
-              : 'Hello, can I get information about corn silage prices and delivery?'
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative bg-green-500 text-white p-4 rounded-full shadow-2xl hover:bg-green-600 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group hover:pr-5 cursor-pointer"
-          aria-label="WhatsApp"
+      {/* AI Chat Window */}
+      {isChatOpen && (
+        <div className="fixed bottom-24 right-6 z-50 w-[330px] sm:w-[380px] h-[460px] bg-[#0b1220] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
+          {/* Header */}
+          <div className="p-4 bg-white/[0.03] border-b border-white/10 flex justify-between items-center">
+            <div className="flex items-center gap-2.5 text-left">
+              <div className="bg-emerald-500/10 p-2 rounded-xl text-emerald-400">
+                <Leaf className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white">Demircan AI Asistan</h4>
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span> {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
+                </span>
+              </div>
+            </div>
+            <button 
+              onClick={() => setIsChatOpen(false)} 
+              className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-left" id="chat-messages-container">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === 'user' ? 'bg-emerald-600 text-white' : 'bg-white/[0.04] text-gray-250 border border-white/5'}`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Suggestions */}
+          <div className="px-4 py-2 flex flex-wrap gap-1.5 bg-white/[0.01] border-t border-white/5">
+            {getChatSuggestions().map((sug, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSendChatMessage(sug)}
+                className="text-[11px] bg-white/[0.03] hover:bg-white/10 text-gray-300 border border-white/5 px-2.5 py-1 rounded-full transition-all cursor-pointer text-left"
+              >
+                {sug}
+              </button>
+            ))}
+          </div>
+
+          {/* Input Form */}
+          <form onSubmit={handleChatSubmit} className="p-3 bg-white/[0.02] border-t border-white/10 flex gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder={lang === 'tr' ? 'Mesajınızı yazın...' : 'Type a message...'}
+              className="flex-1 px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
+            />
+            <button
+              type="submit"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-xl transition-colors cursor-pointer"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Floating Buttons (Chatbot + WhatsApp) */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3.5">
+        {/* Chatbot Button */}
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="relative bg-emerald-600 hover:bg-emerald-750 text-white p-3.5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group cursor-pointer"
+          aria-label="Yapay Zekâ Asistanı"
         >
-          <MessageCircle className="h-7 w-7" />
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-semibold">
-            {lang === 'tr' ? 'WhatsApp Destek' : 'WhatsApp Support'}
+          <span className="absolute inline-flex h-12 w-12 rounded-full bg-emerald-400 opacity-20 animate-pulse -z-10"></span>
+          <MessageSquare className="h-6 w-6" />
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap text-xs font-semibold">
+            {lang === 'tr' ? 'Yapay Zekâ Asistanı' : 'AI Assistant'}
           </span>
-        </a>
+        </button>
+
+        {/* WhatsApp Button */}
+        <div className="flex items-center justify-center relative">
+          <span className="absolute inline-flex h-12 w-12 rounded-full bg-green-400 opacity-75 animate-ping"></span>
+          <a 
+            href={`https://wa.me/905323272383?text=${encodeURIComponent(
+              lang === 'tr' 
+                ? 'Merhaba, mısır silajı fiyatları ve teslimat hakkında bilgi alabilir miyim?' 
+                : 'Hello, can I get information about corn silage prices and delivery?'
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative bg-green-500 text-white p-3.5 rounded-full shadow-2xl hover:bg-green-600 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group cursor-pointer"
+            aria-label="WhatsApp"
+          >
+            <MessageCircle className="h-6 w-6" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap text-xs font-semibold">
+              {lang === 'tr' ? 'WhatsApp Destek' : 'WhatsApp Support'}
+            </span>
+          </a>
+        </div>
       </div>
 
       <ProductSpecModal 
