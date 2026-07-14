@@ -92,6 +92,7 @@ export default function App() {
 
   // FAQ state
   const [openFaq, setOpenFaq] = useState(null);
+  const [activeSpecProduct, setActiveSpecProduct] = useState(null);
 
   // Product Pricing (per ton)
   const productPrices = {
@@ -900,15 +901,23 @@ export default function App() {
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
                   <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setFormData({...formData, productType: '1000kg'});
-                    handleNavigation('contact');
-                  }} 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-2xl transition-colors"
-                >
-                  Sipariş Talebi Oluştur
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setActiveSpecProduct('1000kg')}
+                    className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-2xl transition-colors text-sm cursor-pointer text-center"
+                  >
+                    {lang === 'tr' ? 'Teknik Bilgi' : 'Specs & Lab'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setFormData({...formData, productType: '1000kg'});
+                      handleNavigation('contact');
+                    }} 
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-2xl transition-colors text-sm cursor-pointer text-center"
+                  >
+                    {lang === 'tr' ? 'Sipariş Ver' : 'Order Now'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -937,15 +946,23 @@ export default function App() {
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
                   <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setFormData({...formData, productType: '500kg'});
-                    handleNavigation('contact');
-                  }} 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-2xl transition-colors"
-                >
-                  Sipariş Talebi Oluştur
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setActiveSpecProduct('500kg')}
+                    className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-2xl transition-colors text-sm cursor-pointer text-center"
+                  >
+                    {lang === 'tr' ? 'Teknik Bilgi' : 'Specs & Lab'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setFormData({...formData, productType: '500kg'});
+                      handleNavigation('contact');
+                    }} 
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-2xl transition-colors text-sm cursor-pointer text-center"
+                  >
+                    {lang === 'tr' ? 'Sipariş Ver' : 'Order Now'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -974,15 +991,23 @@ export default function App() {
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
                   <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
-                <button 
-                  onClick={() => {
-                    setFormData({...formData, productType: 'dokme'});
-                    handleNavigation('contact');
-                  }} 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3.5 rounded-2xl transition-colors"
-                >
-                  Sipariş Talebi Oluştur
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setActiveSpecProduct('dokme')}
+                    className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-2xl transition-colors text-sm cursor-pointer text-center"
+                  >
+                    {lang === 'tr' ? 'Teknik Bilgi' : 'Specs & Lab'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setFormData({...formData, productType: 'dokme'});
+                      handleNavigation('contact');
+                    }} 
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-2xl transition-colors text-sm cursor-pointer text-center"
+                  >
+                    {lang === 'tr' ? 'Sipariş Ver' : 'Order Now'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2191,18 +2216,134 @@ export default function App() {
       )}
 
       {/* Floating WhatsApp Button */}
-      <a 
-        href="https://wa.me/905323272383?text=Merhaba%2C%20m%C4%B1s%C4%B1r%20silaj%C4%B1%20fiyatlar%C4%B1%20ve%20teslimat%20hakk%C4%B1nda%20bilgi%20alabilir%20miyim%3F"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-4 rounded-full shadow-2xl hover:bg-green-600 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group hover:pr-5"
-        aria-label="WhatsApp üzerinden mesaj gönderin"
-      >
-        <MessageCircle className="h-7 w-7" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-semibold">
-          WhatsApp Destek
-        </span>
-      </a>
+      <div className="fixed bottom-6 right-6 z-50 flex items-center justify-center">
+        <span className="absolute inline-flex h-14 w-14 rounded-full bg-green-400 opacity-75 animate-ping"></span>
+        <a 
+          href={`https://wa.me/905323272383?text=${encodeURIComponent(
+            lang === 'tr' 
+              ? 'Merhaba, mısır silajı fiyatları ve teslimat hakkında bilgi alabilir miyim?' 
+              : 'Hello, can I get information about corn silage prices and delivery?'
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative bg-green-500 text-white p-4 rounded-full shadow-2xl hover:bg-green-600 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group hover:pr-5 cursor-pointer"
+          aria-label="WhatsApp"
+        >
+          <MessageCircle className="h-7 w-7" />
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-semibold">
+            {lang === 'tr' ? 'WhatsApp Destek' : 'WhatsApp Support'}
+          </span>
+        </a>
+      </div>
+
+      <ProductSpecModal 
+        product={activeSpecProduct} 
+        onClose={() => setActiveSpecProduct(null)} 
+        lang={lang} 
+      />
+    </div>
+  );
+}
+
+function ProductSpecModal({ product, onClose, lang }) {
+  if (!product) return null;
+
+  const specs = {
+    '1000kg': {
+      title: lang === 'tr' ? '1000 kg Vakumlu Mısır Silajı' : '1000 kg Vacuumed Corn Silage',
+      desc: lang === 'tr' ? 'Büyük ölçekli endüstriyel besi ve süt çiftlikleri için özel olarak üretilen, 24 ay dayanıklı akredite laboratuvar onaylı ambalajlı silajımız.' : 'Our packaged silage with 24-month shelf life, approved by accredited laboratories, specifically produced for large-scale industrial beef and dairy farms.',
+      data: [
+        { label: lang === 'tr' ? 'Kuru Madde' : 'Dry Matter', val: '%32 - %35', target: lang === 'tr' ? 'Optimum fermantasyon ve yüksek enerji' : 'Optimum fermentation and high energy' },
+        { label: lang === 'tr' ? 'pH Seviyesi' : 'pH Level', val: '3.8 - 4.1', target: lang === 'tr' ? 'Mükemmel fermantasyon ve asitlik dengesi' : 'Excellent fermentation and acidity balance' },
+        { label: lang === 'tr' ? 'Ham Protein' : 'Crude Protein', val: '%8.0 - %8.5 (KM\'de)', target: lang === 'tr' ? 'Gelişmiş rasyon proteini' : 'Advanced ration protein' },
+        { label: lang === 'tr' ? 'Nişasta Değeri' : 'Starch Value', val: '%28 - %32 (KM\'de)', target: lang === 'tr' ? 'Maksimum dane verimi ve nişasta oranı' : 'Maximum grain yield and starch ratio' },
+        { label: 'NDF', val: '%40 - %44', target: lang === 'tr' ? 'Yüksek sindirilebilir lif oranı' : 'High digestible fiber ratio' },
+        { label: 'ADF', val: '%22 - %25', target: lang === 'tr' ? 'Kolay sindirim ve yüksek enerji dönüşümü' : 'Easy digestion and high energy conversion' },
+        { label: lang === 'tr' ? 'Sindirilebilirlik' : 'Digestibility', val: '%72 - %75', target: lang === 'tr' ? 'Yüksek süt ve et verimi katkısı' : 'High contribution to milk and meat yield' },
+        { label: lang === 'tr' ? 'Paket Tipi' : 'Package Type', val: lang === 'tr' ? '7 Kat UV Stretch, 24 Ay Raf Ömrü' : '7 Layer UV Stretch, 24 Month Shelf Life', target: lang === 'tr' ? 'Hava sızdırmaz, kızışma yapmaz vakum teknolojisi' : 'Airtight, no-heating vacuum technology' }
+      ]
+    },
+    '500kg': {
+      title: lang === 'tr' ? '500 kg Vakumlu Mısır Silajı' : '500 kg Vacuumed Corn Silage',
+      desc: lang === 'tr' ? 'Orta ve küçük ölçekli işletmeler için taşıma ve yükleme kolaylığı sunan, 24 ay dayanıklı birinci sınıf vakumlu rulo balya ürünümüz.' : 'Our premium vacuumed round bale product with 24-month shelf life, offering easy transport and loading for small and medium-sized farms.',
+      data: [
+        { label: lang === 'tr' ? 'Kuru Madde' : 'Dry Matter', val: '%32 - %35', target: lang === 'tr' ? 'Optimum fermantasyon ve yüksek enerji' : 'Optimum fermentation and high energy' },
+        { label: lang === 'tr' ? 'pH Seviyesi' : 'pH Level', val: '3.8 - 4.1', target: lang === 'tr' ? 'Mükemmel fermantasyon ve asitlik dengesi' : 'Excellent fermentation and acidity balance' },
+        { label: lang === 'tr' ? 'Ham Protein' : 'Crude Protein', val: '%8.0 - %8.5 (KM\'de)', target: lang === 'tr' ? 'Gelişmiş rasyon proteini' : 'Advanced ration protein' },
+        { label: lang === 'tr' ? 'Nişasta Değeri' : 'Starch Value', val: '%28 - %32 (KM\'de)', target: lang === 'tr' ? 'Maksimum dane verimi ve nişasta oranı' : 'Maximum grain yield and starch ratio' },
+        { label: 'NDF', val: '%40 - %44', target: lang === 'tr' ? 'Yüksek sindirilebilir lif oranı' : 'High digestible fiber ratio' },
+        { label: 'ADF', val: '%22 - %25', target: lang === 'tr' ? 'Kolay sindirim ve yüksek enerji dönüşümü' : 'Easy digestion and high energy conversion' },
+        { label: lang === 'tr' ? 'Sindirilebilirlik' : 'Digestibility', val: '%72 - %75', target: lang === 'tr' ? 'Yüksek süt ve et verimi katkısı' : 'High contribution to milk and meat yield' },
+        { label: lang === 'tr' ? 'Paket Tipi' : 'Package Type', val: lang === 'tr' ? '7 Kat UV Stretch, 24 Ay Raf Ömrü' : '7 Layer UV Stretch, 24 Month Shelf Life', target: lang === 'tr' ? 'Hava sızdırmaz, kızışma yapmaz vakum teknolojisi' : 'Airtight, no-heating vacuum technology' }
+      ]
+    },
+    'dokme': {
+      title: lang === 'tr' ? 'Dökme Mısır Silajı' : 'Bulk Corn Silage',
+      desc: lang === 'tr' ? 'Tarladan en taze haliyle biçilip doğrudan römork/kamyon bazlı sevkedilen, kendine ait silaj çukuru olan üreticiler için en ekonomik silaj seçeneği.' : 'The most economical silage option for farmers with their own silage pit, harvested at its freshest and delivered directly in bulk trailer/truck loads.',
+      data: [
+        { label: lang === 'tr' ? 'Kuru Madde' : 'Dry Matter', val: '%30 - %33', target: lang === 'tr' ? 'Hızlı fermantasyon için yüksek nem oranı' : 'High moisture content for rapid fermentation' },
+        { label: lang === 'tr' ? 'pH Seviyesi' : 'pH Level', val: '3.9 - 4.2', target: lang === 'tr' ? 'Hızlı asitlik ve koruma başlama süresi' : 'Rapid acidity and protection onset' },
+        { label: lang === 'tr' ? 'Ham Protein' : 'Crude Protein', val: '%7.8 - %8.3 (KM\'de)', target: lang === 'tr' ? 'Doğal rasyon proteini' : 'Natural ration protein' },
+        { label: lang === 'tr' ? 'Nişasta Değeri' : 'Starch Value', val: '%27 - %30 (KM\'de)', target: lang === 'tr' ? 'Yüksek dane patlatma ve sindirim oranı' : 'High grain cracking and digestion rate' },
+        { label: 'NDF', val: '%41 - %45', target: lang === 'tr' ? 'Lif kalitesi ve rumen sindirilebilirliği' : 'Fiber quality and rumen digestibility' },
+        { label: 'ADF', val: '%23 - %26', target: lang === 'tr' ? 'Rasyonda dengeli enerji salınımı' : 'Balanced energy release in the ration' },
+        { label: lang === 'tr' ? 'Sindirilebilirlik' : 'Digestibility', val: '%70 - %73', target: lang === 'tr' ? 'İdeal geviş getirme desteği' : 'Ideal rumination support' },
+        { label: lang === 'tr' ? 'Paket Tipi' : 'Package Type', val: lang === 'tr' ? 'Dökme (Paketsiz)' : 'Bulk (Unpackaged)', target: lang === 'tr' ? 'Doğrudan tır ve kamyonlarla boşaltım' : 'Direct discharge with lorries and trucks' }
+      ]
+    }
+  };
+
+  const activeSpec = specs[product];
+  if (!activeSpec) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 md:p-8 max-w-2xl w-full text-left relative shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-5 right-5 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all cursor-pointer">
+          <X className="h-5 w-5" />
+        </button>
+        
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400">
+            <Leaf className="h-6 w-6" />
+          </div>
+          <h3 className="text-xl md:text-2xl font-black text-white">{activeSpec.title}</h3>
+        </div>
+        
+        <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          {activeSpec.desc}
+        </p>
+
+        <div className="overflow-x-auto rounded-2xl border border-white/10 mb-4 bg-white/[0.01]">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-white/[0.03] text-gray-450 uppercase text-[10px] font-bold tracking-wider border-b border-white/10">
+                <th className="px-4 py-3 text-left">{lang === 'tr' ? 'Analiz Kriteri' : 'Analysis Metric'}</th>
+                <th className="px-4 py-3 text-left">{lang === 'tr' ? 'Değer' : 'Value'}</th>
+                <th className="px-4 py-3 text-left">{lang === 'tr' ? 'Hedef & Açıklama' : 'Target & Description'}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 text-gray-300">
+              {activeSpec.data.map((item, idx) => (
+                <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3.5 font-bold text-white">{item.label}</td>
+                  <td className="px-4 py-3.5 font-extrabold text-emerald-400">{item.val}</td>
+                  <td className="px-4 py-3.5 text-xs text-gray-400">{item.target}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="flex justify-end gap-3 mt-6">
+          <button 
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all cursor-pointer"
+          >
+            {lang === 'tr' ? 'Kapat' : 'Close'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

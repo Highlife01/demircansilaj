@@ -1028,8 +1028,19 @@ function CompaniesList({
   editingStockVal, setEditingStockVal,
   onUpdateStock, savingStock
 }) {
+  const [compSearch, setCompSearch] = useState('');
+
+  const totalStock = useMemo(() => companies.reduce((acc, curr) => acc + (curr.silageStock || 0), 0), [companies]);
+
+  const filtered = useMemo(() => {
+    return companies.filter(c => 
+      c.name?.toLowerCase().includes(compSearch.toLowerCase()) || 
+      c.contactPerson?.toLowerCase().includes(compSearch.toLowerCase())
+    );
+  }, [companies, compSearch]);
+
   return (
-    <div className="space-y-4 text-left">
+    <div className="space-y-4 text-left animate-in fade-in duration-200">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-white flex items-center gap-2">
           <User className="h-5 w-5 text-emerald-450" /> Firmalar & Silaj Stoğu ({companies.length})
@@ -1042,11 +1053,56 @@ function CompaniesList({
         </button>
       </div>
 
+      {/* Stok Dağılım Grafiği */}
+      {companies.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-6">
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+            <Activity className="h-4 w-4 text-emerald-400" /> Firma Stok Dağılım Oranları
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {companies.map(c => {
+              const ratio = totalStock > 0 ? ((c.silageStock || 0) / totalStock) * 100 : 0;
+              return (
+                <div key={c.id} className="space-y-1 bg-white/[0.02] border border-white/5 rounded-xl p-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-gray-300 truncate max-w-[150px]">{c.name}</span>
+                    <span className="font-bold text-yellow-400">
+                      {c.silageStock || 0} Ton <span className="text-[10px] text-gray-500 font-normal">({ratio.toFixed(1)}%)</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500" 
+                      style={{ width: `${ratio}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {companies.length > 0 && (
+        <div className="relative mb-6">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <input
+            type="text"
+            value={compSearch}
+            onChange={(e) => setCompSearch(e.target.value)}
+            placeholder="Firma adı veya yetkili kişi ara..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 outline-none text-sm"
+          />
+        </div>
+      )}
+
       {companies.length === 0 ? (
         <EmptyState icon={<User className="h-10 w-10 text-gray-600" />} text="Henüz eklenmiş firma bulunmuyor." />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<Search className="h-10 w-10 text-gray-600" />} text="Aramanızla eşleşen firma bulunamadı." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {companies.map((c) => {
+          {filtered.map((c) => {
             const isEditing = editingStockId === c.id;
             return (
               <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-all">
