@@ -2099,17 +2099,17 @@ export default function App() {
       <Navbar />
       
       <main>
-        {currentPath === '/' && <HomeView />}
-        {currentPath === '/urunlerimiz' && <ProductsView />}
-        {currentPath === '/kalite-ve-uretim' && <QualityView />}
-        {currentPath === '/iletisim-ve-siparis' && <ContactView />}
-        {currentPath === '/hesaplama-araclari' && <CalculatorsView />}
-        {currentPath === '/bilgi-merkezi' && <KnowledgeCenterView />}
+        {currentPath === '/' && HomeView()}
+        {currentPath === '/urunlerimiz' && ProductsView()}
+        {currentPath === '/kalite-ve-uretim' && QualityView()}
+        {currentPath === '/iletisim-ve-siparis' && ContactView()}
+        {currentPath === '/hesaplama-araclari' && CalculatorsView()}
+        {currentPath === '/bilgi-merkezi' && KnowledgeCenterView()}
         {currentPath.startsWith('/il/') && (
           (() => {
             const match = currentPath.match(/^\/il\/([a-z0-9-]+)-misir-silaji$/);
             if (match) {
-              return <ProvinceView provinceId={match[1]} />;
+              return ProvinceView({ provinceId: match[1] });
             }
             return (
               <div className="pt-40 pb-32 text-center bg-gray-55 min-h-screen">
@@ -2122,7 +2122,7 @@ export default function App() {
         )}
       </main>
 
-      <Footer />
+      {Footer()}
 
       {/* Media Lightbox Modal */}
       {activeMedia && (

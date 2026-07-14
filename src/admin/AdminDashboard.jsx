@@ -9,9 +9,9 @@ import {
   Phone, MapPin, Mail, Trash2, Search, Clock, CheckCircle2,
   PhoneCall, Loader2, Inbox, User, Weight, Banknote,
   Download, CheckCheck, Filter, BellRing, StickyNote,
-  Activity, Radio, Zap, Satellite, Star, Plus, X,
+  Activity, Radio, Zap, Satellite, Star, Plus, X, Check,
 } from 'lucide-react';
-import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION } from '../firebase';
+import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION, COMPANIES_COLLECTION } from '../firebase';
 import DashboardCharts from './DashboardCharts';
 import OrderDetailModal from './OrderDetailModal';
 import { playChime, showBrowserNotification, requestNotifyPermission, getNotifyPermission } from './notify';
@@ -85,8 +85,9 @@ export default function AdminDashboard({ user }) {
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('orders'); // orders, messages, testimonials
+  const [tab, setTab] = useState('orders'); // orders, messages, testimonials, companies
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all'); // all, 7days, 30days, thisMonth, thisYear
@@ -98,6 +99,16 @@ export default function AdminDashboard({ user }) {
   const [showAddTestimonial, setShowAddTestimonial] = useState(false);
   const [newTestimonial, setNewTestimonial] = useState({ name: '', company: '', rating: 5, message: '' });
   const [savingTestimonial, setSavingTestimonial] = useState(false);
+
+  // Company Form State
+  const [showAddCompany, setShowAddCompany] = useState(false);
+  const [newCompany, setNewCompany] = useState({ name: '', address: '', email: '', phone: '', contactPerson: '', silageStock: 0 });
+  const [savingCompany, setSavingCompany] = useState(false);
+  
+  // Inline editing company stock state
+  const [editingStockId, setEditingStockId] = useState(null);
+  const [editingStockVal, setEditingStockVal] = useState(0);
+  const [savingStock, setSavingStock] = useState(false);
 
   const firstOrdersLoad = useRef(true);
   const firstMessagesLoad = useRef(true);
@@ -147,7 +158,12 @@ export default function AdminDashboard({ user }) {
       setTestimonials(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     }, (err) => console.error(err));
 
-    return () => { unsubOrders(); unsubMessages(); unsubTestimonials(); };
+    const qCompanies = query(collection(db, COMPANIES_COLLECTION), orderBy('createdAt', 'desc'));
+    const unsubCompanies = onSnapshot(qCompanies, (snap) => {
+      setCompanies(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, (err) => console.error(err));
+
+    return () => { unsubOrders(); unsubMessages(); unsubTestimonials(); unsubCompanies(); };
   }, []);
 
   const enableNotifications = async () => {
@@ -213,6 +229,8 @@ export default function AdminDashboard({ user }) {
     const todayCount = orders.filter((o) => isToday(o.createdAt)).length + messages.filter((m) => isToday(m.createdAt)).length;
     return { newOrders, newMessages, revenue, totalOrders: filteredOrdersByTime.length, totalMessages: filteredMessagesByTime.length, todayCount };
   }, [filteredOrdersByTime, filteredMessagesByTime, orders, messages]);
+
+  const totalSilageStock = useMemo(() => companies.reduce((sum, c) => sum + Number(c.silageStock || 0), 0), [companies]);
 
   // Birleşik canlı akış: sipariş + mesajlar kronolojik (en yeni önce).
   const feed = useMemo(() => {
@@ -300,6 +318,43 @@ export default function AdminDashboard({ user }) {
       console.error(err);
     } finally {
       setSavingTestimonial(false);
+    }
+  };
+
+  const handleAddCompany = async (e) => {
+    e.preventDefault();
+    if (!newCompany.name) return;
+    setSavingCompany(true);
+    try {
+      await addDoc(collection(db, COMPANIES_COLLECTION), {
+        name: newCompany.name,
+        address: newCompany.address || '',
+        email: newCompany.email || '',
+        phone: newCompany.phone || '',
+        contactPerson: newCompany.contactPerson || '',
+        silageStock: Number(newCompany.silageStock || 0),
+        createdAt: serverTimestamp()
+      });
+      setNewCompany({ name: '', address: '', email: '', phone: '', contactPerson: '', silageStock: 0 });
+      setShowAddCompany(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
+  const handleUpdateCompanyStock = async (id, newStock) => {
+    setSavingStock(true);
+    try {
+      await updateDoc(doc(db, COMPANIES_COLLECTION, id), {
+        silageStock: Number(newStock)
+      });
+      setEditingStockId(null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingStock(false);
     }
   };
 
@@ -404,11 +459,12 @@ export default function AdminDashboard({ user }) {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Göstergeler */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
           <StatCard icon={<Zap className="h-6 w-6 text-cyan-300" />} accent="bg-cyan-500/15 border border-cyan-500/20" glow="shadow-[0_0_25px_-8px_rgba(6,182,212,0.5)]" label="Bugün" value={stats.todayCount} />
           <StatCard icon={<Package className="h-6 w-6 text-emerald-300" />} accent="bg-emerald-500/15 border border-emerald-500/20" label="Toplam Sipariş" value={stats.totalOrders} />
           <StatCard icon={<Bell className="h-6 w-6 text-blue-300" />} accent="bg-blue-500/15 border border-blue-500/20" label="Yeni Sipariş" value={stats.newOrders} />
           <StatCard icon={<MessageSquare className="h-6 w-6 text-amber-300" />} accent="bg-amber-500/15 border border-amber-500/20" label="Yeni Mesaj" value={stats.newMessages} />
+          <StatCard icon={<Weight className="h-6 w-6 text-yellow-300" />} accent="bg-yellow-500/15 border border-yellow-500/20" label="Stoktaki Silaj" value={`${totalSilageStock.toLocaleString('tr-TR')} Ton`} />
           <StatCard icon={<TrendingUp className="h-6 w-6 text-fuchsia-300" />} accent="bg-fuchsia-500/15 border border-fuchsia-500/20" label="Tahmini Ciro" value={`${stats.revenue.toLocaleString('tr-TR')} ₺`} />
         </div>
 
@@ -446,6 +502,12 @@ export default function AdminDashboard({ user }) {
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'testimonials' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
               <Star className="h-4 w-4" /> Yorumlar
+            </button>
+            <button
+              onClick={() => setTab('companies')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'companies' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              <User className="h-4 w-4" /> Firmalar & Stok
             </button>
           </div>
 
@@ -490,7 +552,7 @@ export default function AdminDashboard({ user }) {
               </button>
             )}
 
-            {tab !== 'testimonials' && (
+            {tab !== 'testimonials' && tab !== 'companies' && (
               <button
                 onClick={exportCurrent}
                 className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors cursor-pointer"
@@ -499,7 +561,7 @@ export default function AdminDashboard({ user }) {
               </button>
             )}
 
-            {tab !== 'testimonials' && (
+            {tab !== 'testimonials' && tab !== 'companies' && (
               <div className="relative sm:w-64">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <input
@@ -522,12 +584,24 @@ export default function AdminDashboard({ user }) {
           <OrdersList orders={filteredOrders} onStatus={setOrderStatus} onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} onOpen={setSelectedOrder} />
         ) : tab === 'messages' ? (
           <MessagesList messages={filteredMessages} onRead={markMessageRead} onDelete={(id) => removeDoc(MESSAGES_COLLECTION, id)} />
-        ) : (
+        ) : tab === 'testimonials' ? (
           <TestimonialsList 
             testimonials={testimonials} 
             onToggleApproval={toggleTestimonialApproval} 
             onDelete={(id) => removeDoc(TESTIMONIALS_COLLECTION, id)}
             onAddClick={() => setShowAddTestimonial(true)} 
+          />
+        ) : (
+          <CompaniesList
+            companies={companies}
+            onDelete={(id) => removeDoc(COMPANIES_COLLECTION, id)}
+            onAddClick={() => setShowAddCompany(true)}
+            editingStockId={editingStockId}
+            setEditingStockId={setEditingStockId}
+            editingStockVal={editingStockVal}
+            setEditingStockVal={setEditingStockVal}
+            onUpdateStock={handleUpdateCompanyStock}
+            savingStock={savingStock}
           />
         )}
       </main>
@@ -616,6 +690,104 @@ export default function AdminDashboard({ user }) {
                   className="bg-emerald-500 hover:bg-emerald-600 text-black px-5 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 cursor-pointer"
                 >
                   {savingTestimonial ? 'Kaydediliyor...' : 'Yorumu Ekle'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Yeni Firma Ekleme Modalı */}
+      {showAddCompany && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 w-full max-w-md text-left relative shadow-2xl">
+            <button 
+              onClick={() => setShowAddCompany(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 border-b border-white/5 pb-3">
+              <Plus className="text-emerald-400 h-5 w-5" /> Yeni Firma Ekle
+            </h3>
+            <form onSubmit={handleAddCompany} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Firma Adı</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Örn: Öz Anadolu Tarım"
+                  value={newCompany.name}
+                  onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Yetkili Kişi</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Örn: Hasan Demir"
+                  value={newCompany.contactPerson}
+                  onChange={(e) => setNewCompany({...newCompany, contactPerson: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Telefon</label>
+                <input 
+                  type="tel"
+                  placeholder="Örn: 0532 123 4567"
+                  value={newCompany.phone}
+                  onChange={(e) => setNewCompany({...newCompany, phone: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">E-Posta</label>
+                <input 
+                  type="email"
+                  placeholder="Örn: info@firmamiz.com"
+                  value={newCompany.email}
+                  onChange={(e) => setNewCompany({...newCompany, email: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Adres</label>
+                <textarea 
+                  required
+                  rows="2"
+                  placeholder="Firma adresi..."
+                  value={newCompany.address}
+                  onChange={(e) => setNewCompany({...newCompany, address: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none resize-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Stoktaki Silaj Miktarı (Ton)</label>
+                <input 
+                  type="number"
+                  placeholder="Örn: 150"
+                  value={newCompany.silageStock}
+                  onChange={(e) => setNewCompany({...newCompany, silageStock: Number(e.target.value)})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddCompany(false)}
+                  className="px-4 py-2 text-sm text-gray-400 hover:text-white cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={savingCompany}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-black px-5 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 cursor-pointer"
+                >
+                  {savingCompany ? 'Kaydediliyor...' : 'Firmayı Ekle'}
                 </button>
               </div>
             </form>
@@ -844,6 +1016,116 @@ function TestimonialsList({ testimonials, onToggleApproval, onDelete, onAddClick
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompaniesList({
+  companies, onDelete, onAddClick,
+  editingStockId, setEditingStockId,
+  editingStockVal, setEditingStockVal,
+  onUpdateStock, savingStock
+}) {
+  return (
+    <div className="space-y-4 text-left">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <User className="h-5 w-5 text-emerald-450" /> Firmalar & Silaj Stoğu ({companies.length})
+        </h3>
+        <button 
+          onClick={onAddClick}
+          className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+        >
+          <Plus className="h-4 w-4" /> Yeni Firma Ekle
+        </button>
+      </div>
+
+      {companies.length === 0 ? (
+        <EmptyState icon={<User className="h-10 w-10 text-gray-600" />} text="Henüz eklenmiş firma bulunmuyor." />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {companies.map((c) => {
+            const isEditing = editingStockId === c.id;
+            return (
+              <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col justify-between hover:bg-white/[0.05] transition-all">
+                <div>
+                  <div className="flex justify-between items-start gap-3 mb-4">
+                    <div>
+                      <h4 className="font-extrabold text-white text-base truncate">{c.name}</h4>
+                      {c.contactPerson && (
+                        <p className="text-xs text-emerald-400 font-semibold mt-0.5">Yetkili: {c.contactPerson}</p>
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => onDelete(c.id)}
+                      title="Firmayı Sil" 
+                      className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-gray-300 border-t border-white/5 pt-3.5 pb-4">
+                    {c.phone && (
+                      <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-gray-500 shrink-0" /> <a href={`tel:${c.phone}`} className="hover:underline">{c.phone}</a></p>
+                    )}
+                    {c.email && (
+                      <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-gray-500 shrink-0" /> <a href={`mailto:${c.email}`} className="hover:underline">{c.email}</a></p>
+                    )}
+                    {c.address && (
+                      <p className="flex items-start gap-2"><MapPin className="h-3.5 w-3.5 text-gray-500 shrink-0 mt-0.5" /> <span className="leading-relaxed">{c.address}</span></p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 flex items-center justify-between mt-2">
+                  <div className="text-left">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Silaj Stoğu</span>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input
+                          type="number"
+                          value={editingStockVal}
+                          onChange={(e) => setEditingStockVal(Number(e.target.value))}
+                          className="w-20 px-2 py-1 rounded bg-black/40 border border-white/20 text-white text-xs outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                        <button
+                          onClick={() => onUpdateStock(c.id, editingStockVal)}
+                          disabled={savingStock}
+                          className="p-1.5 rounded bg-emerald-500 text-black hover:bg-emerald-600 transition-colors cursor-pointer"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setEditingStockId(null)}
+                          className="p-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-base font-extrabold text-yellow-400 block mt-0.5">
+                        {(c.silageStock || 0).toLocaleString('tr-TR')} Ton
+                      </span>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <button
+                      onClick={() => {
+                        setEditingStockId(c.id);
+                        setEditingStockVal(c.silageStock || 0);
+                      }}
+                      className="text-xs font-bold text-emerald-400 hover:text-emerald-350 hover:bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                    >
+                      Stok Güncelle
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

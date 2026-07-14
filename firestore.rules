@@ -160,6 +160,11 @@ service cloud.firestore {
       allow write: if isDemircanAdmin() || isSuperAdmin();
     }
 
+    // Firmalar ve Stok (Companies): sadece Demircan admini okur/yazar.
+    match /demircan_companies/{companyId} {
+      allow read, write: if isDemircanAdmin() || isSuperAdmin();
+    }
+
     // Deny every other path by default.
     match /{document=**} {
       allow read, write: if false;

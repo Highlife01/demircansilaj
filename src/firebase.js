@@ -22,5 +22,6 @@ export const auth = getAuth(app);
 export const ORDERS_COLLECTION = 'demircan_orders';
 export const MESSAGES_COLLECTION = 'demircan_messages';
 export const TESTIMONIALS_COLLECTION = 'demircan_testimonials';
+export const COMPANIES_COLLECTION = 'demircan_companies';
 
 export default app;
