@@ -189,16 +189,16 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
           <div className="bg-green-950 rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row text-left">
             <div className="lg:w-1/2 p-10 md:p-16 flex flex-col justify-center">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-                Kaliteli Silajın Sırrı Doğru Hasatta Saklıdır
+                {t('cta.title')}
               </h2>
               <p className="text-green-100/90 text-base mb-10 leading-relaxed font-light">
-                Mısır silajını değerlendirmek için en doğru yol bilimsel analizlerdir. Hedefimiz olan %31-35 arası kuru madde ve 3.8-4.1 pH değerleri ile hayvanlarınızın sindirim sistemini korur, rasyon maliyetlerinizi düşürürüz.
+                {t('cta.desc')}
               </p>
               <ul className="space-y-5 mb-10">
                 {[
-                  '10-15 cm biçim yüksekliği ile toprak kaynaklı bakteri riski sıfıra iner.',
-                  'Dane ezilmesi peynirimsi kıvamda yapılarak maksimum sindirilebilirlik sağlanır.',
-                  'Yüksek NDF ve ADF değerleri dengelenmiştir.'
+                  t('cta.item1'),
+                  t('cta.item2'),
+                  t('cta.item3')
                 ].map((item, i) => (
                   <li key={i} className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-400 mr-3.5 shrink-0 mt-0.5" />
@@ -211,7 +211,7 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
                   onClick={() => handleNavigation('quality')} 
                   className="text-yellow-400 font-bold hover:text-yellow-300 flex items-center transition-colors text-base"
                 >
-                  Üretim Sürecimizi İnceleyin <ChevronRight className="ml-1 h-5 w-5" />
+                  {t('cta.link')} <ChevronRight className="ml-1 h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -232,9 +232,9 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
       <div className="py-24 bg-gray-55 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">Üretim ve Sevkiyat Galerisi</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">{t('gallery.title')}</h2>
             <p className="text-base text-gray-655 leading-relaxed">
-              Mısır silajı üretim tesislerimizden, hasat, paketleme ve Türkiye'nin her yerine gerçekleştirdiğimiz sevkiyatlardan gerçek görüntüler. Önizleme için videoların üzerine gelebilir, sesli izlemek için tıklayabilirsiniz.
+              {t('gallery.subtitle')}
             </p>
           </div>
 
@@ -284,7 +284,7 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
                     <p className="text-gray-500 text-xs leading-relaxed line-clamp-2">{item.desc}</p>
                   </div>
                   <div className="mt-4 flex items-center text-xs font-bold text-green-700 uppercase tracking-wide">
-                    {item.type === 'video' ? 'Videoyu İzle' : 'Resmi İncele'} <ChevronRight className="h-4 w-4 ml-0.5 group-hover:translate-x-1 transition-transform" />
+                    {item.type === 'video' ? t('gallery.watchVideo') : t('gallery.viewImage')} <ChevronRight className="h-4 w-4 ml-0.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
               </div>

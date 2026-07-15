@@ -477,6 +477,7 @@ export default function App() {
           )}
           {currentPath === '/urunlerimiz' && (
             <ProductsView 
+              t={t}
               lang={lang}
               setActiveSpecProduct={setActiveSpecProduct}
               formData={formData}
@@ -485,7 +486,10 @@ export default function App() {
             />
           )}
           {currentPath === '/kalite-ve-uretim' && (
-            <QualityView />
+            <QualityView 
+              t={t}
+              lang={lang}
+            />
           )}
           {currentPath === '/iletisim-ve-siparis' && (
             <ContactView 
@@ -508,7 +512,10 @@ export default function App() {
             />
           )}
           {currentPath === '/bilgi-merkezi' && (
-            <KnowledgeCenterView />
+            <KnowledgeCenterView 
+              t={t}
+              lang={lang}
+            />
           )}
           {currentPath.startsWith('/il/') && (
             (() => {
@@ -519,6 +526,7 @@ export default function App() {
                     provinceId={match[1]}
                     provinces={provinces}
                     lang={lang}
+                    t={t}
                     navigateTo={navigateTo}
                     setFormData={setFormData}
                     formData={formData}
@@ -528,9 +536,9 @@ export default function App() {
               }
               return (
                 <div className="pt-40 pb-32 text-center bg-gray-55 min-h-screen">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-4">Sayfa Bulunamadı</h1>
-                  <p className="text-gray-650 mb-8">Aradığınız mısır silajı sayfası mevcut değil.</p>
-                  <button onClick={() => navigateTo('/')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Ana Sayfaya Dön</button>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-4">{lang === 'tr' ? 'Sayfa Bulunamadı' : 'Page Not Found'}</h1>
+                  <p className="text-gray-655 mb-8">{lang === 'tr' ? 'Aradığınız mısır silajı sayfası mevcut değil.' : 'The corn silage page you are looking for does not exist.'}</p>
+                  <button onClick={() => navigateTo('/')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold">{lang === 'tr' ? 'Ana Sayfaya Dön' : 'Return to Home'}</button>
                 </div>
               );
             })()
@@ -538,7 +546,7 @@ export default function App() {
         </Suspense>
       </main>
 
-      <Footer navItems={navItems} handleNavigation={handleNavigation} />
+      <Footer navItems={navItems} handleNavigation={handleNavigation} t={t} lang={lang} />
 
       {/* Media Lightbox Modal */}
       {activeMedia && (
@@ -831,7 +839,7 @@ function Navbar({
   );
 }
 
-function Footer({ navItems, handleNavigation }) {
+function Footer({ navItems, handleNavigation, t, lang }) {
   return (
     <footer className="bg-gray-955 text-gray-300 py-16 border-t-4 border-green-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -842,7 +850,7 @@ function Footer({ navItems, handleNavigation }) {
               <span className="text-xl font-bold text-white tracking-wide">DEMİRCAN SİLAJ</span>
             </div>
             <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-              Süt ve besi hayvancılığında maksimum verim için Türkiye'nin birinci sınıf vakumlu mısır silajı üreticisi.
+              {t('footer.desc')}
             </p>
             <div className="flex space-x-4">
               <a href="https://wa.me/905323272383" target="_blank" rel="noopener noreferrer" className="bg-gray-800 hover:bg-green-600 p-2.5 rounded-full transition-colors text-white">
@@ -852,7 +860,7 @@ function Footer({ navItems, handleNavigation }) {
           </div>
           
           <div>
-            <h3 className="text-lg font-bold text-white mb-6">Hızlı Menü</h3>
+            <h3 className="text-lg font-bold text-white mb-6">{t('footer.links')}</h3>
             <ul className="space-y-3">
               {navItems.map(item => (
                 <li key={item.id}>
@@ -865,21 +873,27 @@ function Footer({ navItems, handleNavigation }) {
           </div>
           
           <div>
-            <h3 className="text-lg font-bold text-white mb-6">Hizmetlerimiz</h3>
+            <h3 className="text-lg font-bold text-white mb-6">
+              {lang === 'tr' ? 'Hizmetlerimiz' : 'Our Services'}
+            </h3>
             <ul className="space-y-3">
-              <li className="text-sm text-gray-405">Vakumlu Mısır Silajı (1000 kg)</li>
-              <li className="text-sm text-gray-405">Vakumlu Mısır Silajı (500 kg)</li>
-              <li className="text-sm text-gray-405">Dökme Mısır Silajı (Kamyon Bazlı)</li>
-              <li className="text-sm text-gray-405">Toptan Kaba Yem Tedariği</li>
+              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Vakumlu Mısır Silajı (1000 kg)' : 'Vacuum Corn Silage (1000 kg)'}</li>
+              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Vakumlu Mısır Silajı (500 kg)' : 'Vacuum Corn Silage (500 kg)'}</li>
+              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Dökme Mısır Silajı (Kamyon Bazlı)' : 'Bulk Corn Silage (Truck Based)'}</li>
+              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Toptan Kaba Yem Tedariği' : 'Wholesale Forage Supply'}</li>
             </ul>
           </div>
           
           <div>
-            <h3 className="text-lg font-bold text-white mb-6">İletişim</h3>
+            <h3 className="text-lg font-bold text-white mb-6">{t('footer.contact')}</h3>
             <ul className="space-y-4">
               <li className="flex items-start text-sm">
                 <MapPin className="h-5 w-5 text-green-500 mr-3 shrink-0 mt-0.5" />
-                <span className="leading-relaxed">Organize Tarım Bölgesi, Merkez Mah.<br/>Tarım Sk. No:12 Adana, Türkiye</span>
+                <span className="leading-relaxed">
+                  {lang === 'tr' 
+                    ? 'Organize Tarım Bölgesi, Merkez Mah. Tarım Sk. No:12 Adana, Türkiye' 
+                    : 'Organized Agricultural Zone, Merkez District, Tarim St. No:12 Adana, Turkey'}
+                </span>
               </li>
               <li className="flex items-center text-sm">
                 <Phone className="h-5 w-5 text-green-500 mr-3 shrink-0" />
@@ -893,8 +907,10 @@ function Footer({ navItems, handleNavigation }) {
           </div>
         </div>
         <div className="border-t border-gray-900 mt-16 pt-8 text-sm text-center flex flex-col md:flex-row justify-between items-center text-gray-500">
-          <p>&copy; 2026 Demircan Silaj. Tüm hakları saklıdır.</p>
-          <p className="mt-4 md:mt-0">Premium Tarım ve Hayvancılık Çözümleri</p>
+          <p>&copy; 2026 Demircan Silaj. {t('footer.rights')}</p>
+          <p className="mt-4 md:mt-0">
+            {lang === 'tr' ? 'Premium Tarım ve Hayvancılık Çözümleri' : 'Premium Agriculture & Livestock Solutions'}
+          </p>
         </div>
       </div>
     </footer>
