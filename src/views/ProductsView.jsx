@@ -136,7 +136,7 @@ export default function ProductsView({
               <div className="border-t border-gray-100 pt-6 mt-auto">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Tahmini Fiyat</span>
-                  <span className="text-xl font-extrabold text-green-700">5.500 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
+                  <span className="text-xl font-extrabold text-green-700">5.000 ₺ <span className="text-xs text-gray-500 font-medium">/ Ton</span></span>
                 </div>
                 <div className="flex gap-3">
                   <button 

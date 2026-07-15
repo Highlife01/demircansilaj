@@ -10,7 +10,7 @@ import { provinces } from '../data/provinces.js';
 const productPrices = {
   '1000kg': 5500,
   '500kg': 5500,
-  'dokme': 5500,
+  'dokme': 5000,
   'diger': 5500
 };
 
@@ -265,7 +265,7 @@ export default function ContactView({
                   >
                     <option value="1000kg">{t('productsPage.types.1000kg.title')} (5.500 ₺/Ton)</option>
                     <option value="500kg">{t('productsPage.types.500kg.title')} (5.500 ₺/Ton)</option>
-                    <option value="dokme">{t('productsPage.types.dokme.title')} (5.500 ₺/Ton)</option>
+                    <option value="dokme">{t('productsPage.types.dokme.title')} (5.000 ₺/Ton)</option>
                     <option value="diger">{t('productsPage.types.diger.title')} (5.500 ₺/Ton)</option>
                   </select>
                 </div>

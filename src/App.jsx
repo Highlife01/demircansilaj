@@ -128,8 +128,8 @@ export default function App() {
       
       if (lowerText.includes('fiyat') || lowerText.includes('price') || lowerText.includes('ne kadar') || lowerText.includes('kaç') || lowerText.includes('kac') || lowerText.includes('para') || lowerText.includes('maliyet') || lowerText.includes('cost')) {
         botResponse = lang === 'tr'
-          ? "Mısır silajımızın ton fiyatı güncel olarak 5.500 ₺'dir. Siparişleriniz Adana fabrikamızdan tır (25 ton) veya kamyon (10-15 ton) bazında kapınıza sevk edilir."
-          : "Our corn silage ton price is currently 5,500 ₺. Orders are shipped from our Adana factory by trucks (25 tons) or lorries (10-15 tons) directly to your door.";
+          ? "Mısır silajımızın ton fiyatı vakumlu balyalar için 5.500 ₺, dökme silaj için ise 5.000 ₺'dir. Siparişleriniz Adana fabrikamızdan tır (25 ton) veya kamyon (10-15 ton) bazında kapınıza sevk edilir."
+          : "Our corn silage ton price is 5,500 ₺ for vacuumed bales and 5,000 ₺ for bulk silage. Orders are shipped from our Adana factory by trucks (25 tons) or lorries (10-15 tons) directly to your door.";
       } else if (lowerText.includes('kalite') || lowerText.includes('analiz') || lowerText.includes('protein') || lowerText.includes('km') || lowerText.includes('spec') || lowerText.includes('değer') || lowerText.includes('deger') || lowerText.includes('laboratuvar')) {
         botResponse = lang === 'tr'
           ? "Silajımız ideal %32-35 Kuru Madde (KM) ve 3.8 - 4.1 pH oranına sahiptir. Sindirilebilirlik oranımız %72-75 olup, koçan dane ezme seviyemiz süt verimini doğrudan artırır. Detaylı analiz tablomuzu 'Ürünlerimiz' sayfasındaki 'Teknik Bilgi' kısmında görebilirsiniz."
@@ -152,8 +152,8 @@ export default function App() {
           : "Hello! I am happy to help you. Ask me anything about our silage products, specifications, or logistics.";
       } else {
         botResponse = lang === 'tr'
-          ? "Sorunuzu tam anlayamadım ama silaj fiyatımız ton başına 5.500 ₺'dir. Ürün analizlerimiz %32-35 kuru madde içerir. Detaylı bilgi veya nakliye hesaplaması için lütfen üst menüdeki 'Hesaplama Araçları' veya 'İletişim' sayfamızı ziyaret edin."
-          : "I couldn't fully understand your question. Our silage price is 5,500 ₺/ton and contains 32-35% dry matter. For details or shipping rates, please visit the 'Calculators' or 'Contact' page.";
+          ? "Sorunuzu tam anlayamadım ama silaj fiyatımız vakumlu balyalar için ton başına 5.500 ₺, dökme için ise 5.000 ₺'dir. Ürün analizlerimiz %32-35 kuru madde içerir. Detaylı bilgi veya nakliye hesaplaması için lütfen üst menüdeki 'Hesaplama Araçları' veya 'İletişim' sayfamızı ziyaret edin."
+          : "I couldn't fully understand your question. Our silage price is 5,500 ₺/ton for vacuumed bales and 5,000 ₺/ton for bulk. It contains 32-35% dry matter. For details, please visit the 'Calculators' or 'Contact' page.";
       }
 
       setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
