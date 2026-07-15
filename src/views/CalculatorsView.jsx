@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator, TrendingUp, Truck } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, PRICING_RULES_COLLECTION } from '../firebase';
 
 export default function CalculatorsView({ 
   t, 
@@ -11,6 +13,20 @@ export default function CalculatorsView({
   selectedProvId,
   setSelectedProvId
 }) {
+  // Default pricing values
+  const DEFAULT_PRICES = {
+    baseProductPrice: 5500,      // ₺/ton
+    shippingMinFee: 4000,        // ₺
+    shippingPerKm: 2.2,          // ₺ per ton per km
+    concentrateCost: 120,        // ₺
+    forageCost: 60,              // ₺
+    silagePrice: 5.5,            // ₺/kg
+    milkPrice: 15,               // ₺/liter
+    milkIncreasePerCow: 2.5,     // liters/day
+    concentrateReduction: 0.30   // 30% reduction with silage
+  };
+
+  const [pricing, setPricing] = useState(DEFAULT_PRICES);
   const [calcType, setCalcType] = useState('sut'); // sut, besi, kucukbas
   const [animalCount, setAnimalCount] = useState(50);
   const [duration, setDuration] = useState(6); // months
@@ -27,30 +43,49 @@ export default function CalculatorsView({
   const [concentrateCost, setConcentrateCost] = useState(120);
   const [forageCost, setForageCost] = useState(60);
 
+  // Load pricing rules from Firestore
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const pricingDoc = await getDoc(doc(db, PRICING_RULES_COLLECTION, 'current'));
+        if (pricingDoc.exists()) {
+          setPricing(prevPricing => ({ ...prevPricing, ...pricingDoc.data() }));
+          // Update state inputs with firestore values
+          setMilkPrice(pricingDoc.data().milkPrice || DEFAULT_PRICES.milkPrice);
+          setConcentrateCost(pricingDoc.data().concentrateCost || DEFAULT_PRICES.concentrateCost);
+          setForageCost(pricingDoc.data().forageCost || DEFAULT_PRICES.forageCost);
+        }
+      } catch (error) {
+        console.error('Error loading pricing rules:', error);
+        // Fall back to defaults
+      }
+    };
+    if (db) loadPricing();
+  }, []);
+
   // Silage need calculation
   const dailyConsumption = calcType === 'sut' ? 15 : calcType === 'besi' ? 10 : 2;
   const requiredTons = Math.ceil((animalCount * dailyConsumption * 30 * duration) / 1000);
 
-  // ROI Calculations
+  // ROI Calculations using pricing from Firestore
   const dailyCurrentCost = roiAnimals * (concentrateCost + forageCost);
-  const dailyNewCost = roiAnimals * (concentrateCost * 0.70 + 82.5); // 15kg silage * 5.5 ₺ = 82.5 ₺. Concentrate reduces by 30%
+  const dailyNewCost = roiAnimals * (concentrateCost * (1 - pricing.concentrateReduction) + pricing.milkIncreasePerCow * pricing.silagePrice);
   const dailySavings = Math.max(0, Math.ceil(dailyCurrentCost - dailyNewCost));
-  const dailyExtraMilkIncome = Math.ceil(roiAnimals * 2.5 * milkPrice);
+  const dailyExtraMilkIncome = Math.ceil(roiAnimals * pricing.milkIncreasePerCow * milkPrice);
   const totalDailyRoiProfit = dailySavings + dailyExtraMilkIncome;
   const monthlyRoiProfit = totalDailyRoiProfit * 30;
   const paybackDays = totalDailyRoiProfit > 0 ? Math.ceil(137500 / totalDailyRoiProfit) : 0;
 
-  // Logistics calculation
+  // Logistics calculation using pricing from Firestore
   const activeProv = provinces.find(p => p.id === selectedProvId) || provinces[0];
-  const baseProductPrice = 5500; // Premium 1000kg
-  const productCost = tonnageInput * baseProductPrice;
+  const productCost = tonnageInput * pricing.baseProductPrice;
   
   // Shipping is: (distance * 2.2 ₺ per ton per km) with minimum shipping fee of 4000 ₺
-  const shippingCost = activeProv.dist === 0 ? 0 : Math.max(4000, Math.ceil(tonnageInput * (activeProv.dist * 2.2)));
+  const shippingCost = activeProv.dist === 0 ? 0 : Math.max(pricing.shippingMinFee, Math.ceil(tonnageInput * (activeProv.dist * pricing.shippingPerKm)));
   const totalLogisticsCost = productCost + shippingCost;
 
   // Milk profit calculation
-  const dailyMilkIncrease = Math.ceil(milkingCows * 2.5); // 2.5 liters increase per cow
+  const dailyMilkIncrease = Math.ceil(milkingCows * pricing.milkIncreasePerCow);
   const dailyProfit = dailyMilkIncrease * milkPrice;
   const monthlyProfit = dailyProfit * 30;
   const annualProfit = monthlyProfit * 12;

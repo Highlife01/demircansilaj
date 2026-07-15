@@ -121,6 +121,30 @@
     <!-- PWA Settings -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#15803d" />
+    
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FN4CX0Y3JB"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-FN4CX0Y3JB', {
+        'page_path': window.location.pathname,
+        'anonymize_ip': true,
+        'allow_ad_personalization_signals': false
+      });
+    </script>
+
+    <!-- Google Analytics Event Tracking Helper -->
+    <script>
+      window.trackEvent = function(eventName, eventData = {}) {
+        if (typeof gtag !== 'undefined') {
+          gtag('event', eventName, eventData);
+        }
+      };
+      // Sipariş formu ve önemli tıklamalar otomatik track edilecek
+    </script>
+
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

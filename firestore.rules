@@ -166,6 +166,18 @@ service cloud.firestore {
       allow write: if isDemircanAdmin() || isSuperAdmin();
     }
 
+    // Fiyatlandırma Kuralları (Pricing Rules): herkes okuyabilir, sadece Demircan admini yazabilir.
+    match /demircan_pricing_rules/{ruleId} {
+      allow read: if true;
+      allow write: if isDemircanAdmin() || isSuperAdmin();
+    }
+
+    // Admin Giriş Logları (Admin Logs): sadece Demircan admini okuyabilir.
+    match /demircan_admin_logs/{logId} {
+      allow create: if isDemircanAdmin() || isSuperAdmin();
+      allow read, update, delete: if isDemircanAdmin() || isSuperAdmin();
+    }
+
     // Firmalar ve Stok (Companies): sadece Demircan admini okur/yazar.
     match /demircan_companies/{companyId} {
       allow read, write: if isDemircanAdmin() || isSuperAdmin();

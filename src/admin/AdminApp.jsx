@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Loader2, ShieldAlert } from 'lucide-react';
-import { auth } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, ADMIN_LOGS_COLLECTION } from '../firebase';
 import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
 
@@ -12,13 +13,35 @@ const ALLOWED_ADMIN_UIDS = [
   'VdkScnrMiWYyv9Q5h9mSUT56YkU2'  // cebrailkara@gmail.com
 ];
 
+// Log admin action to Firestore
+const logAdminAction = async (user, action, details = {}) => {
+  try {
+    await addDoc(collection(db, ADMIN_LOGS_COLLECTION), {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || 'Unknown',
+      action: action,
+      details: details,
+      timestamp: serverTimestamp(),
+      ipAddress: '', // Will be added server-side if needed
+      userAgent: navigator.userAgent
+    });
+  } catch (error) {
+    console.error('Error logging admin action:', error);
+  }
+};
+
 export default function AdminApp() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (u && ALLOWED_ADMIN_UIDS.includes(u.uid)) {
+        // Log admin login
+        await logAdminAction(u, 'LOGIN', { timestamp: new Date().toISOString() });
+      }
       setChecking(false);
     });
     return () => unsub();
@@ -35,6 +58,9 @@ export default function AdminApp() {
   if (!user) return <AdminLogin />;
 
   if (!ALLOWED_ADMIN_UIDS.includes(user.uid)) {
+    // Log unauthorized access attempt
+    logAdminAction(user, 'UNAUTHORIZED_ACCESS_ATTEMPT', { timestamp: new Date().toISOString() });
+    
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 text-center">
         <div className="max-w-sm">
