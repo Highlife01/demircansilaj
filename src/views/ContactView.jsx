@@ -170,7 +170,7 @@ export default function ContactView({
                   </div>
                   <div>
                     <p className="text-xs text-green-400 font-bold uppercase tracking-wider mb-1">E-Posta Adresimiz</p>
-                    <p className="text-lg font-bold">satis@demircansilaj.com.tr</p>
+                    <p className="text-lg font-bold">info@demircansilaj.com.tr</p>
                   </div>
                 </div>
                 
