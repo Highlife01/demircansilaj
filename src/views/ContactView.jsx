@@ -6,6 +6,7 @@ import {
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, ORDERS_COLLECTION, MESSAGES_COLLECTION } from '../firebase';
 import { provinces } from '../data/provinces.js';
+import { orderFormRateLimiter, contactFormRateLimiter } from '../utils/rateLimiter.js';
 
 const productPrices = {
   '1000kg': 5500,
@@ -29,6 +30,7 @@ export default function ContactView({
 }) {
   const [orderStatus, setOrderStatus] = useState('idle');
   const [contactStatus, setContactStatus] = useState('idle');
+  const [rateLimitError, setRateLimitError] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
   
   const [contactData, setContactData] = useState({
@@ -44,6 +46,14 @@ export default function ContactView({
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (!orderFormRateLimiter.canSubmit()) {
+      setRateLimitError('Çok hızlı gönderdiniz. Lütfen 1 dakika bekleyin.');
+      setTimeout(() => setRateLimitError(''), 4000);
+      return;
+    }
+    
     setOrderStatus('sending');
     
     // Safety check / sanitization
@@ -75,6 +85,9 @@ export default function ContactView({
         createdAt: serverTimestamp()
       });
       
+      // Record successful submission for rate limiting
+      orderFormRateLimiter.recordSubmit();
+      
       setOrderStatus('success');
       
       // WhatsApp message generation
@@ -105,6 +118,14 @@ export default function ContactView({
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (!contactFormRateLimiter.canSubmit()) {
+      setRateLimitError('Çok hızlı mesaj gönderdiniz. Lütfen 1 dakika bekleyin.');
+      setTimeout(() => setRateLimitError(''), 4000);
+      return;
+    }
+    
     setContactStatus('sending');
 
     const sanitizedName = contactData.name.replace(/[<>]/g, "");
@@ -121,6 +142,9 @@ export default function ContactView({
         createdAt: serverTimestamp()
       });
 
+      // Record successful submission for rate limiting
+      contactFormRateLimiter.recordSubmit();
+      
       setContactStatus('success');
       setContactData({ name: '', phone: '', email: '', message: '' });
       setTimeout(() => setContactStatus('idle'), 6000);
@@ -340,6 +364,13 @@ export default function ContactView({
                   )}
                 </button>
                 <p className="text-center text-xs text-gray-400 mt-4">{lang === 'tr' ? 'Talebiniz kaydedildikten sonra sizi WhatsApp yetkilisine yönlendirecektir.' : 'Your request will redirect you to WhatsApp after being saved.'}</p>
+                
+                {rateLimitError && (
+                  <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-xl px-4 py-3 mt-4 animate-pulse">
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-yellow-600" />
+                    <span>{rateLimitError}</span>
+                  </div>
+                )}
                 
                 {orderStatus === 'success' && (
                   <div className="flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-800 text-sm rounded-xl px-4 py-3 mt-4">
