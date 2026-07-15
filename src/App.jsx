@@ -451,13 +451,21 @@ export default function App() {
     }
   }, [currentPath, lang]);
 
-  const navItems = [
+  const headerNavItems = [
     { id: 'home', label: t('nav.home') },
     { id: 'products', label: t('nav.products') },
     { id: 'quality', label: t('nav.quality') },
     { id: 'calculators', label: t('nav.calculators') },
-    { id: 'knowledge', label: t('nav.knowledge') },
+    { id: 'blog', label: t('nav.blog') }
+  ];
+
+  const footerNavItems = [
+    { id: 'home', label: t('nav.home') },
+    { id: 'products', label: t('nav.products') },
+    { id: 'quality', label: t('nav.quality') },
+    { id: 'calculators', label: t('nav.calculators') },
     { id: 'blog', label: t('nav.blog') },
+    { id: 'knowledge', label: t('nav.knowledge') },
     { id: 'contact', label: t('nav.contact') }
   ];
 
@@ -472,7 +480,7 @@ export default function App() {
         changeLanguage={changeLanguage}
         lang={lang}
         t={t}
-        navItems={navItems}
+        navItems={headerNavItems}
       />
       
       <main>
@@ -567,7 +575,7 @@ export default function App() {
         </Suspense>
       </main>
 
-      <Footer navItems={navItems} handleNavigation={handleNavigation} t={t} lang={lang} />
+      <Footer navItems={footerNavItems} handleNavigation={handleNavigation} t={t} lang={lang} />
 
       {/* Media Lightbox Modal */}
       {activeMedia && (
