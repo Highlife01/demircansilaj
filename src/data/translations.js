@@ -6,7 +6,8 @@ export const translations = {
       quality: "Kalite & Üretim",
       contact: "İletişim & Sipariş",
       calculators: "Hesaplama Araçları",
-      knowledge: "Bilgi Merkezi"
+      knowledge: "Bilgi Merkezi",
+      blog: "Bilgi Portalı"
     },
     hero: {
       badge: "TÜRKİYE'NİN BİRİNCİ SINIF SİLAJI",
@@ -180,7 +181,8 @@ export const translations = {
       quality: "Quality & Production",
       contact: "Contact & Order",
       calculators: "Calculators",
-      knowledge: "Info Hub"
+      knowledge: "Info Hub",
+      blog: "Knowledge Portal"
     },
     hero: {
       badge: "TURKEY'S FIRST-CLASS SILAGE",

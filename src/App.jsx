@@ -14,6 +14,7 @@ const ContactView = lazy(() => import('./views/ContactView.jsx'));
 const CalculatorsView = lazy(() => import('./views/CalculatorsView.jsx'));
 const KnowledgeCenterView = lazy(() => import('./views/KnowledgeCenterView.jsx'));
 const ProvinceView = lazy(() => import('./views/ProvinceView.jsx'));
+const BlogView = lazy(() => import('./views/BlogView.jsx'));
 
 const galleryItems = [
   { type: 'image', src: '/media/tarla1.jpg', title: 'Hasat Öncesi Mısır Kontrolü', desc: 'Mısırların olgunluk düzeylerinin hasat öncesi uzman ekibimiz tarafından sahada incelenmesi.' },
@@ -43,6 +44,10 @@ const PageLoader = () => (
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [selectedBlogSlug, setSelectedBlogSlug] = useState(() => {
+    const match = window.location.pathname.match(/^\/blog\/([a-z0-9-]+)$/);
+    return match ? match[1] : null;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMedia, setActiveMedia] = useState(null);
@@ -181,6 +186,7 @@ export default function App() {
     if (currentPath === '/iletisim-ve-siparis') return 'contact';
     if (currentPath === '/hesaplama-araclari') return 'calculators';
     if (currentPath === '/bilgi-merkezi') return 'knowledge';
+    if (currentPath === '/blog' || currentPath.startsWith('/blog/')) return 'blog';
     if (currentPath.startsWith('/il/')) return 'quality';
     return 'home';
   };
@@ -205,7 +211,10 @@ export default function App() {
     }
 
     const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname);
+      const path = window.location.pathname;
+      setCurrentPath(path);
+      const match = path.match(/^\/blog\/([a-z0-9-]+)$/);
+      setSelectedBlogSlug(match ? match[1] : null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -231,6 +240,7 @@ export default function App() {
     else if (id === 'contact') navigateTo('/iletisim-ve-siparis');
     else if (id === 'calculators') navigateTo('/hesaplama-araclari');
     else if (id === 'knowledge') navigateTo('/bilgi-merkezi');
+    else if (id === 'blog') navigateTo('/blog');
   };
 
   // JSON-LD Schema & Dynamic Meta Injector
@@ -447,6 +457,7 @@ export default function App() {
     { id: 'quality', label: t('nav.quality') },
     { id: 'calculators', label: t('nav.calculators') },
     { id: 'knowledge', label: t('nav.knowledge') },
+    { id: 'blog', label: t('nav.blog') },
     { id: 'contact', label: t('nav.contact') }
   ];
 
@@ -515,6 +526,16 @@ export default function App() {
             <KnowledgeCenterView 
               t={t}
               lang={lang}
+            />
+          )}
+          {(currentPath === '/blog' || currentPath.startsWith('/blog/')) && (
+            <BlogView 
+              t={t}
+              lang={lang}
+              selectedBlogSlug={selectedBlogSlug}
+              setSelectedBlogSlug={setSelectedBlogSlug}
+              navigateTo={navigateTo}
+              handleNavigation={handleNavigation}
             />
           )}
           {currentPath.startsWith('/il/') && (

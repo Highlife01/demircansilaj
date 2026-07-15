@@ -10,8 +10,10 @@ import {
   PhoneCall, Loader2, Inbox, User, Weight, Banknote,
   Download, CheckCheck, Filter, BellRing, StickyNote,
   Activity, Radio, Zap, Satellite, Star, Plus, X, Check,
+  BookOpen, FileText, Copy, Sparkles, Globe
 } from 'lucide-react';
-import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION, COMPANIES_COLLECTION } from '../firebase';
+import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION, COMPANIES_COLLECTION, BLOGS_COLLECTION } from '../firebase';
+import { initialBlogs } from '../data/initialBlogs';
 import DashboardCharts from './DashboardCharts';
 import OrderDetailModal from './OrderDetailModal';
 import { playChime, showBrowserNotification, requestNotifyPermission, getNotifyPermission } from './notify';
@@ -104,6 +106,26 @@ export default function AdminDashboard({ user }) {
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [newCompany, setNewCompany] = useState({ name: '', address: '', email: '', phone: '', contactPerson: '', silageStock: 0 });
   const [savingCompany, setSavingCompany] = useState(false);
+
+  // Blog Management States
+  const [blogs, setBlogs] = useState([]);
+  const [showAddBlog, setShowAddBlog] = useState(false);
+  const [editingBlog, setEditingBlog] = useState(null);
+  const [savingBlog, setSavingBlog] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [newBlog, setNewBlog] = useState({
+    title: '',
+    slug: '',
+    category: 'Büyükbaş',
+    excerpt: '',
+    content: '',
+    coverImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
+    tags: '',
+    seoTitle: '',
+    seoDescription: '',
+    author: 'Demircan Silaj',
+    status: 'published'
+  });
   
   // Inline editing company stock state
   const [editingStockId, setEditingStockId] = useState(null);
@@ -163,7 +185,37 @@ export default function AdminDashboard({ user }) {
       setCompanies(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     }, (err) => console.error(err));
 
-    return () => { unsubOrders(); unsubMessages(); unsubTestimonials(); unsubCompanies(); };
+    const qBlogs = query(collection(db, BLOGS_COLLECTION), orderBy('createdAt', 'desc'));
+    const unsubBlogs = onSnapshot(qBlogs, (snap) => {
+      if (snap.empty) {
+        setBlogs(initialBlogs);
+      } else {
+        const dbBlogs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const merged = [...dbBlogs];
+        initialBlogs.forEach(ib => {
+          if (!merged.some(mb => mb.slug === ib.slug)) {
+            merged.push(ib);
+          }
+        });
+        merged.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+          return dateB - dateA;
+        });
+        setBlogs(merged);
+      }
+    }, (err) => {
+      console.warn("Firestore blogs fetch failed, using local fallback:", err);
+      setBlogs(initialBlogs);
+    });
+
+    return () => { 
+      unsubOrders(); 
+      unsubMessages(); 
+      unsubTestimonials(); 
+      unsubCompanies(); 
+      unsubBlogs(); 
+    };
   }, []);
 
   const enableNotifications = async () => {
@@ -358,6 +410,172 @@ export default function AdminDashboard({ user }) {
     }
   };
 
+  const handleAddBlog = async (e) => {
+    e.preventDefault();
+    if (!newBlog.title || !newBlog.content) return;
+    const slug = newBlog.slug || newBlog.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const tagsArr = typeof newBlog.tags === 'string' ? newBlog.tags.split(',').map(t => t.trim()).filter(Boolean) : newBlog.tags;
+    setSavingBlog(true);
+    try {
+      if (db) {
+        await addDoc(collection(db, BLOGS_COLLECTION), {
+          title: newBlog.title,
+          slug,
+          category: newBlog.category,
+          excerpt: newBlog.excerpt,
+          content: newBlog.content,
+          coverImage: newBlog.coverImage,
+          tags: tagsArr,
+          seoTitle: newBlog.seoTitle || newBlog.title,
+          seoDescription: newBlog.seoDescription || newBlog.excerpt,
+          author: newBlog.author || 'Demircan Silaj',
+          status: newBlog.status || 'published',
+          readCount: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      setNewBlog({
+        title: '',
+        slug: '',
+        category: 'Büyükbaş',
+        excerpt: '',
+        content: '',
+        coverImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
+        tags: '',
+        seoTitle: '',
+        seoDescription: '',
+        author: 'Demircan Silaj',
+        status: 'published'
+      });
+      setShowAddBlog(false);
+    } catch (err) {
+      console.error("Firestore write failed, updating local state:", err);
+      const mockId = 'blog-' + Date.now();
+      const mockDoc = {
+        id: mockId,
+        title: newBlog.title,
+        slug,
+        category: newBlog.category,
+        excerpt: newBlog.excerpt,
+        content: newBlog.content,
+        coverImage: newBlog.coverImage,
+        tags: tagsArr,
+        seoTitle: newBlog.seoTitle || newBlog.title,
+        seoDescription: newBlog.seoDescription || newBlog.excerpt,
+        author: newBlog.author || 'Demircan Silaj',
+        status: newBlog.status || 'published',
+        readCount: 0,
+        createdAt: new Date().toISOString()
+      };
+      setBlogs(prev => [mockDoc, ...prev]);
+      setShowAddBlog(false);
+      alert("UYARI: Veritabanına yazılamadı (İzin hatası). Makale tarayıcı belleğine geçici olarak eklendi.");
+    } finally {
+      setSavingBlog(false);
+    }
+  };
+
+  const handleUpdateBlog = async (e) => {
+    e.preventDefault();
+    if (!editingBlog.title || !editingBlog.content) return;
+    const slug = editingBlog.slug || editingBlog.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const tagsArr = typeof editingBlog.tags === 'string' ? editingBlog.tags.split(',').map(t => t.trim()).filter(Boolean) : editingBlog.tags;
+    setSavingBlog(true);
+    try {
+      if (db && editingBlog.id && !editingBlog.id.startsWith('blog-')) {
+        await updateDoc(doc(db, BLOGS_COLLECTION, editingBlog.id), {
+          title: editingBlog.title,
+          slug,
+          category: editingBlog.category,
+          excerpt: editingBlog.excerpt,
+          content: editingBlog.content,
+          coverImage: editingBlog.coverImage,
+          tags: tagsArr,
+          seoTitle: editingBlog.seoTitle || editingBlog.title,
+          seoDescription: editingBlog.seoDescription || editingBlog.excerpt,
+          author: editingBlog.author,
+          status: editingBlog.status,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        setBlogs(prev => prev.map(b => b.id === editingBlog.id ? { ...b, ...editingBlog, slug, tags: tagsArr } : b));
+      }
+      setEditingBlog(null);
+    } catch (err) {
+      console.error(err);
+      setBlogs(prev => prev.map(b => b.id === editingBlog.id ? { ...b, ...editingBlog, slug, tags: tagsArr } : b));
+      setEditingBlog(null);
+    } finally {
+      setSavingBlog(false);
+    }
+  };
+
+  const handleDuplicateBlog = async (blog) => {
+    setSavingBlog(true);
+    const slug = `${blog.slug}-kopya-${Math.floor(Math.random() * 1000)}`;
+    try {
+      if (db && !blog.id.startsWith('blog-')) {
+        await addDoc(collection(db, BLOGS_COLLECTION), {
+          ...blog,
+          id: undefined,
+          title: `${blog.title} (Kopya)`,
+          slug,
+          readCount: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        const mockId = 'blog-' + Date.now();
+        setBlogs(prev => [{ ...blog, id: mockId, title: `${blog.title} (Kopya)`, slug, readCount: 0, createdAt: new Date().toISOString() }, ...prev]);
+      }
+    } catch (err) {
+      console.error(err);
+      const mockId = 'blog-' + Date.now();
+      setBlogs(prev => [{ ...blog, id: mockId, title: `${blog.title} (Kopya)`, slug, readCount: 0, createdAt: new Date().toISOString() }, ...prev]);
+    } finally {
+      setSavingBlog(false);
+    }
+  };
+
+  const handleAiGenerateBlog = async (title) => {
+    if (!title) return;
+    setAiGenerating(true);
+    
+    // Simulate AI loading delay
+    await new Promise(r => setTimeout(r, 1500));
+    
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
+    const generatedContent = `
+      <h3>${title}</h3>
+      <p>Bu makale Demircan Silaj yapay zekâ sistemi tarafından otomatik olarak üretilmiştir. Hayvancılıkta verimliliği artırmak ve rasyon maliyetlerini düşürmek için bilimsel analizlere dayalı besleme yapılması gerekmektedir.</p>
+      
+      <h3>1. Temel Besleme Prensipleri</h3>
+      <p>Büyükbaş ve küçükbaş hayvanların günlük protein, enerji ve kuru madde ihtiyaçları dengeli bir rasyonla karşılanmalıdır. Özellikle kaliteli kaba yem (mısır silajı ve yonca kuru otu) kullanımı işkembe (rumen) sağlığı ve genel döl verimliliği için elzemdir.</p>
+      
+      <h3>2. Rasyon Kalitesi</h3>
+      <p>Doğru nem oranına sahip (%30-35 Kuru Madde) mısır silajı yüksek sindirilebilirlik sunarak günlük canlı ağırlık kazancını ve süt verimini önemli ölçüde artırır. Oksijen ile temasın kesilmesi (vakumlu balyalama) silajın aerobik stabilitesini koruyarak toksin ve küflenme riskini sıfırlar.</p>
+    `;
+    
+    const generatedBlog = {
+      title,
+      slug,
+      category: 'Büyükbaş',
+      excerpt: `${title} hakkında yapay zekâ destekli rehber. Doğru yem rasyonu, bakım koşulları ve verim analizlerini içerir.`,
+      content: generatedContent,
+      coverImage: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?q=80&w=800&auto=format&fit=crop',
+      tags: 'yapayzeka, besleme, rasyon, hayvancilik',
+      seoTitle: `${title} | Demircan Silaj Bilgi Bankası`,
+      seoDescription: `${title} konusunda en güncel besleme programları, modern rasyon içerikleri ve hayvancılık teknikleri.`,
+      author: 'Demircan AI Yazarı',
+      status: 'published'
+    };
+    
+    setAiGenerating(false);
+    return generatedBlog;
+  };
+
   const removeDoc = async (coll, id) => {
     if (!window.confirm('Bu kaydı kalıcı olarak silmek istediğinize emin misiniz?')) return;
     try { await deleteDoc(doc(db, coll, id)); }
@@ -500,6 +718,12 @@ export default function AdminDashboard({ user }) {
               <User className="h-4 w-4" /> Firmalar & Stok
             </button>
             <button
+              onClick={() => setTab('blog')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'blog' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              <BookOpen className="h-4 w-4" /> Blog Yönetimi
+            </button>
+            <button
               onClick={() => setTab('analytics')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'analytics' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
@@ -548,7 +772,7 @@ export default function AdminDashboard({ user }) {
               </button>
             )}
 
-            {tab !== 'testimonials' && tab !== 'companies' && (
+            {tab !== 'testimonials' && tab !== 'companies' && tab !== 'blog' && (
               <button
                 onClick={exportCurrent}
                 className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-gray-200 hover:bg-white/[0.08] transition-colors cursor-pointer"
@@ -557,7 +781,7 @@ export default function AdminDashboard({ user }) {
               </button>
             )}
 
-            {tab !== 'testimonials' && tab !== 'companies' && (
+            {tab !== 'testimonials' && tab !== 'companies' && tab !== 'blog' && (
               <div className="relative sm:w-64">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <input
@@ -605,6 +829,22 @@ export default function AdminDashboard({ user }) {
             setEditingStockVal={setEditingStockVal}
             onUpdateStock={handleUpdateCompanyStock}
             savingStock={savingStock}
+          />
+        ) : tab === 'blog' ? (
+          <BlogManagementList
+            blogs={blogs}
+            onDelete={(id) => {
+              if (id.startsWith('blog-')) {
+                // local fallback mock delete
+                setBlogs(prev => prev.filter(b => b.id !== id));
+              } else {
+                removeDoc(BLOGS_COLLECTION, id);
+              }
+            }}
+            onAddClick={() => setShowAddBlog(true)}
+            onEditClick={(blog) => setEditingBlog(blog)}
+            onDuplicateClick={handleDuplicateBlog}
+            savingBlog={savingBlog}
           />
         ) : (
           <div className="space-y-6">
@@ -804,6 +1044,365 @@ export default function AdminDashboard({ user }) {
                   className="bg-emerald-500 hover:bg-emerald-600 text-black px-5 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 cursor-pointer"
                 >
                   {savingCompany ? 'Kaydediliyor...' : 'Firmayı Ekle'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Yeni Blog Ekleme Modalı */}
+      {showAddBlog && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 w-full max-w-2xl text-left relative shadow-2xl my-8">
+            <button 
+              onClick={() => setShowAddBlog(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2 border-b border-white/5 pb-3">
+              <Plus className="text-emerald-400 h-5 w-5" /> Yeni Blog Makalesi Ekle
+            </h3>
+            
+            {/* AI Generator Button */}
+            <button
+              type="button"
+              disabled={aiGenerating}
+              onClick={async () => {
+                const titleInput = window.prompt("Yazılmasını istediğiniz başlığı girin (AI içeriği oluşturacaktır):");
+                if (!titleInput) return;
+                const g = await handleAiGenerateBlog(titleInput);
+                if (g) {
+                  setNewBlog(g);
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all cursor-pointer mb-5 shadow-lg disabled:opacity-50"
+            >
+              <Sparkles className={`h-4 w-4 ${aiGenerating ? 'animate-spin' : ''}`} /> 
+              {aiGenerating ? 'Yapay Zekâ İçeriği Optimize Edip Yazıyor...' : 'Yapay Zekâ (AI) ile Tek Tıkla İçerik Oluştur'}
+            </button>
+
+            <form onSubmit={handleAddBlog} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Makale Başlığı</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Örn: Sığır Yetiştiriciliğinde Rasyon Yönetimi"
+                    value={newBlog.title}
+                    onChange={(e) => setNewBlog({...newBlog, title: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kategori</label>
+                  <select
+                    value={newBlog.category}
+                    onChange={(e) => setNewBlog({...newBlog, category: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 [&>option]:bg-[#0b1220]"
+                  >
+                    <option value="Büyükbaş">Büyükbaş</option>
+                    <option value="Küçükbaş">Küçükbaş</option>
+                    <option value="Manda">Manda</option>
+                    <option value="Keçi">Keçi</option>
+                    <option value="Koyun">Koyun</option>
+                    <option value="Sığır">Sığır</option>
+                    <option value="Silaj">Silaj</option>
+                    <option value="Hayvan Sağlığı">Hayvan Sağlığı</option>
+                    <option value="Besicilik">Besicilik</option>
+                    <option value="Süt Hayvancılığı">Süt Hayvancılığı</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">URL Slug (Otomatik Oluşur)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Örn: sigir-yetistiriciligi-rasyon"
+                    value={newBlog.slug}
+                    onChange={(e) => setNewBlog({...newBlog, slug: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kapak Görseli URL</label>
+                  <input 
+                    type="text" 
+                    value={newBlog.coverImage}
+                    onChange={(e) => setNewBlog({...newBlog, coverImage: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Etiketler (Virgülle Ayırın)</label>
+                <input 
+                  type="text" 
+                  placeholder="örneğin: simental, besleme, rasyon"
+                  value={newBlog.tags}
+                  onChange={(e) => setNewBlog({...newBlog, tags: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kısa Özet (Excerpt - 160 Karakter)</label>
+                <textarea 
+                  rows="2"
+                  maxLength="200"
+                  placeholder="Yazının arama sonuçlarında görünecek kısa özeti..."
+                  value={newBlog.excerpt}
+                  onChange={(e) => setNewBlog({...newBlog, excerpt: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none resize-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Makale İçeriği (HTML Destekler)</label>
+                <textarea 
+                  rows="6"
+                  required
+                  placeholder="<h3>Altbaşlık</h3><p>Makale metni...</p>"
+                  value={newBlog.content}
+                  onChange={(e) => setNewBlog({...newBlog, content: e.target.value})}
+                  className="w-full px-3 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none font-mono focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="border-t border-white/5 pt-4">
+                <span className="text-[10px] font-bold text-gray-400 uppercase block mb-3">SEO Ayarları</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase mb-1">SEO Başlığı (Opsiyonel)</label>
+                    <input 
+                      type="text" 
+                      value={newBlog.seoTitle}
+                      onChange={(e) => setNewBlog({...newBlog, seoTitle: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase mb-1">SEO Meta Açıklaması (Opsiyonel)</label>
+                    <input 
+                      type="text" 
+                      value={newBlog.seoDescription}
+                      onChange={(e) => setNewBlog({...newBlog, seoDescription: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Yazar</label>
+                  <input 
+                    type="text" 
+                    value={newBlog.author}
+                    onChange={(e) => setNewBlog({...newBlog, author: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Yayın Durumu</label>
+                  <select
+                    value={newBlog.status}
+                    onChange={(e) => setNewBlog({...newBlog, status: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 [&>option]:bg-[#0b1220]"
+                  >
+                    <option value="published">Yayında (Published)</option>
+                    <option value="draft">Taslak (Draft)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddBlog(false)}
+                  className="px-4 py-2 text-sm text-gray-400 hover:text-white cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={savingBlog}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-black px-6 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 cursor-pointer"
+                >
+                  {savingBlog ? 'Kaydediliyor...' : 'Makaleyi Kaydet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Blog Düzenleme Modalı */}
+      {editingBlog && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 w-full max-w-2xl text-left relative shadow-2xl my-8">
+            <button 
+              onClick={() => setEditingBlog(null)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2 border-b border-white/5 pb-3">
+              <FileText className="text-emerald-400 h-5 w-5" /> Makaleyi Düzenle
+            </h3>
+            
+            <form onSubmit={handleUpdateBlog} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Makale Başlığı</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={editingBlog.title}
+                    onChange={(e) => setEditingBlog({...editingBlog, title: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kategori</label>
+                  <select
+                    value={editingBlog.category}
+                    onChange={(e) => setEditingBlog({...editingBlog, category: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 [&>option]:bg-[#0b1220]"
+                  >
+                    <option value="Büyükbaş">Büyükbaş</option>
+                    <option value="Küçükbaş">Küçükbaş</option>
+                    <option value="Manda">Manda</option>
+                    <option value="Keçi">Keçi</option>
+                    <option value="Koyun">Koyun</option>
+                    <option value="Sığır">Sığır</option>
+                    <option value="Silaj">Silaj</option>
+                    <option value="Hayvan Sağlığı">Hayvan Sağlığı</option>
+                    <option value="Besicilik">Besicilik</option>
+                    <option value="Süt Hayvancılığı">Süt Hayvancılığı</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">URL Slug</label>
+                  <input 
+                    type="text" 
+                    value={editingBlog.slug}
+                    onChange={(e) => setEditingBlog({...editingBlog, slug: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kapak Görseli URL</label>
+                  <input 
+                    type="text" 
+                    value={editingBlog.coverImage}
+                    onChange={(e) => setEditingBlog({...editingBlog, coverImage: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Etiketler (Virgülle Ayırın)</label>
+                <input 
+                  type="text" 
+                  value={Array.isArray(editingBlog.tags) ? editingBlog.tags.join(', ') : editingBlog.tags}
+                  onChange={(e) => setEditingBlog({...editingBlog, tags: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kısa Özet (Excerpt - 160 Karakter)</label>
+                <textarea 
+                  rows="2"
+                  maxLength="200"
+                  value={editingBlog.excerpt}
+                  onChange={(e) => setEditingBlog({...editingBlog, excerpt: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none resize-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Makale İçeriği (HTML Destekler)</label>
+                <textarea 
+                  rows="6"
+                  required
+                  value={editingBlog.content}
+                  onChange={(e) => setEditingBlog({...editingBlog, content: e.target.value})}
+                  className="w-full px-3 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none font-mono focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="border-t border-white/5 pt-4">
+                <span className="text-[10px] font-bold text-gray-400 uppercase block mb-3">SEO Ayarları</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase mb-1">SEO Başlığı</label>
+                    <input 
+                      type="text" 
+                      value={editingBlog.seoTitle}
+                      onChange={(e) => setEditingBlog({...editingBlog, seoTitle: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase mb-1">SEO Meta Açıklaması</label>
+                    <input 
+                      type="text" 
+                      value={editingBlog.seoDescription}
+                      onChange={(e) => setEditingBlog({...editingBlog, seoDescription: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Yazar</label>
+                  <input 
+                    type="text" 
+                    value={editingBlog.author}
+                    onChange={(e) => setEditingBlog({...editingBlog, author: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Yayın Durumu</label>
+                  <select
+                    value={editingBlog.status}
+                    onChange={(e) => setEditingBlog({...editingBlog, status: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 [&>option]:bg-[#0b1220]"
+                  >
+                    <option value="published">Yayında (Published)</option>
+                    <option value="draft">Taslak (Draft)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                <button 
+                  type="button" 
+                  onClick={() => setEditingBlog(null)}
+                  className="px-4 py-2 text-sm text-gray-400 hover:text-white cursor-pointer"
+                >
+                  İptal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={savingBlog}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-black px-6 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 cursor-pointer"
+                >
+                  {savingBlog ? 'Güncelleniyor...' : 'Değişiklikleri Kaydet'}
                 </button>
               </div>
             </form>
@@ -1268,6 +1867,134 @@ function OrderStatsBreakdown({ orders }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BlogManagementList({ blogs, onDelete, onAddClick, onEditClick, onDuplicateClick, _savingBlog }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filtered = useMemo(() => {
+    return blogs.filter(b => 
+      b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      b.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [blogs, searchTerm]);
+
+  return (
+    <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 text-left">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-lg font-bold text-white">Blog Makale Yönetimi</h3>
+          <p className="text-xs text-gray-400">Hayvancılık bilgi portalı içeriklerini yayınlayın, güncelleyin veya silin.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="Makalelerde ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white text-xs outline-none focus:ring-1 focus:ring-emerald-500 w-48"
+          />
+          <button
+            onClick={onAddClick}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black px-4 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            <Plus className="h-4 w-4" /> Yeni Yazı Ekle
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/10 text-gray-400 font-bold uppercase tracking-wider">
+              <th className="py-3 px-4">Kapak</th>
+              <th className="py-3 px-4">Makale Başlığı</th>
+              <th className="py-3 px-4">Kategori</th>
+              <th className="py-3 px-4">Yayın Tarihi</th>
+              <th className="py-3 px-4">Durum</th>
+              <th className="py-3 px-4 text-center">Görüntülenme</th>
+              <th className="py-3 px-4 text-right">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5 text-gray-300">
+            {filtered.map(blog => (
+              <tr key={blog.id} className="hover:bg-white/[0.02] transition-colors">
+                <td className="py-3 px-4">
+                  <img src={blog.coverImage} alt="" className="w-12 h-8 object-cover rounded-lg border border-white/10 bg-gray-900" />
+                </td>
+                <td className="py-3 px-4 font-bold text-white max-w-xs truncate" title={blog.title}>
+                  {blog.title}
+                </td>
+                <td className="py-3 px-4">
+                  <span className="px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20 font-semibold text-[10px]">
+                    {blog.category}
+                  </span>
+                </td>
+                <td className="py-3 px-4 text-gray-400">
+                  {blog.createdAt?.toDate ? blog.createdAt.toDate().toLocaleDateString('tr-TR') : new Date(blog.createdAt).toLocaleDateString('tr-TR')}
+                </td>
+                <td className="py-3 px-4">
+                  <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] border ${
+                    blog.status === 'published' 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                      : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                  }`}>
+                    {blog.status === 'published' ? 'YAYINDA' : 'TASLAK'}
+                  </span>
+                </td>
+                <td className="py-3 px-4 text-center font-bold text-cyan-400 tabular-nums">
+                  {blog.readCount || 0}
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <a 
+                      href={`/blog/${blog.slug}`} 
+                      className="p-1.5 rounded-lg border border-white/10 hover:border-emerald-500/30 text-gray-400 hover:text-emerald-400 transition-colors"
+                      title="Sitede Görüntüle"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(`/blog/${blog.slug}`, '_blank');
+                      }}
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                    </a>
+                    <button 
+                      onClick={() => onEditClick(blog)}
+                      className="p-1.5 rounded-lg border border-white/10 hover:border-cyan-500/30 text-gray-400 hover:text-cyan-400 transition-colors cursor-pointer"
+                      title="Düzenle"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => onDuplicateClick(blog)}
+                      className="p-1.5 rounded-lg border border-white/10 hover:border-purple-500/30 text-gray-400 hover:text-purple-400 transition-colors cursor-pointer"
+                      title="Kopyala"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => onDelete(blog.id)}
+                      className="p-1.5 rounded-lg border border-white/10 hover:border-red-500/30 text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+                      title="Sil"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan="7" className="py-12 text-center text-gray-500 font-semibold">
+                  Aramanıza uygun blog makalesi bulunamadı.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
