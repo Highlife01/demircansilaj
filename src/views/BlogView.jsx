@@ -268,7 +268,7 @@ export default function BlogView({ lang, selectedBlogSlug, setSelectedBlogSlug, 
           </div>
 
           {/* Cover Image */}
-          <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 aspect-[21/9] mb-12 bg-gray-55">
+          <div className="rounded-3xl overflow-hidden shadow-lg border border-gray-100 aspect-[21/9] mb-12 bg-gray-50">
             <img 
               src={currentBlog.coverImage} 
               alt={currentBlog.title} 
@@ -343,7 +343,7 @@ export default function BlogView({ lang, selectedBlogSlug, setSelectedBlogSlug, 
 
   // Render Blog List Grid
   return (
-    <div className="pt-32 pb-24 bg-gray-55 min-h-screen text-left">
+    <div className="pt-32 pb-24 bg-gray-50 min-h-screen text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Block */}
@@ -426,7 +426,7 @@ export default function BlogView({ lang, selectedBlogSlug, setSelectedBlogSlug, 
                 className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 border border-gray-100 cursor-pointer flex flex-col group text-left"
               >
                 {/* Image block */}
-                <div className="h-56 bg-green-955 relative overflow-hidden">
+                <div className="h-56 bg-green-950 relative overflow-hidden">
                   <img 
                     src={blog.coverImage} 
                     alt={blog.title} 

@@ -16,7 +16,7 @@ export default function QualityView({ lang }) {
                loading="eager"
                fetchpriority="high"
              />
-             <div className="absolute inset-0 bg-gradient-to-br from-green-955 via-green-900/90 to-black/80"></div>
+             <div className="absolute inset-0 bg-gradient-to-br from-green-950 via-green-900/90 to-black/80"></div>
            </div>
            <div className="relative z-10">
               <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6">
@@ -38,12 +38,12 @@ export default function QualityView({ lang }) {
               <span className="bg-green-100 p-2.5 rounded-xl mr-4"><Star className="h-6 w-6 text-green-600" /></span>
               {lang === 'tr' ? 'Optimum Hasat Zamanı' : 'Optimum Harvest Time'}
             </h2>
-            <p className="text-gray-655 text-sm mb-8 leading-relaxed">
+            <p className="text-gray-600 text-sm mb-8 leading-relaxed">
               {lang === 'tr'
                 ? <>Mısır silajını değerlendirmek için en doğru yol kuru madde analizidir. Hedef bir mısır silajının <strong>%31-35 arasında KM (Kuru Madde)</strong> içermesi gerekir. Hasat zamanımız bitkinin %65-70 nemde olduğu dönemdir. Daneyi ezdiğimizde peynirimsi koyu bir kıvamda olmasına özellikle dikkat ediyoruz.</>
                 : <>The best way to evaluate corn silage is dry matter analysis. A target corn silage must contain <strong>between 31-35% DM (Dry Matter)</strong>. Our harvest time is when the plant is at 65-70% moisture. We pay special attention to ensuring the grain has a cheesy, thick consistency when crushed.</>}
             </p>
-            <div className="bg-gray-55 border-l-4 border-yellow-500 p-6 rounded-r-2xl">
+            <div className="bg-gray-50 border-l-4 border-yellow-500 p-6 rounded-r-2xl">
               <p className="text-gray-800 font-medium italic text-xs leading-relaxed">
                 {lang === 'tr'
                   ? '"Süt verimini etkileyen en önemli rasyon kriteri sindirilebilir nişastadır. Doğru zamanda hasat edilmiş ve dane kırıcı ile patlatılmış mısır silajı günlük süt miktarını 2 ile 3 litre artırabilir."'
@@ -97,7 +97,7 @@ export default function QualityView({ lang }) {
         </div>
 
         {/* Technical Details */}
-        <div className="bg-gray-55 rounded-3xl p-8 md:p-16 mb-20 border border-gray-100">
+        <div className="bg-gray-50 rounded-3xl p-8 md:p-16 mb-20 border border-gray-100">
           <h3 className="text-2xl font-bold text-gray-900 mb-12 text-center">
             {lang === 'tr' ? 'Üretim Standartlarımız' : 'Our Production Standards'}
           </h3>
@@ -107,7 +107,7 @@ export default function QualityView({ lang }) {
               <h4 className="text-xl font-bold text-gray-900 mb-3">
                 {lang === 'tr' ? 'Partikül Büyüklüğü' : 'Particle Size'}
               </h4>
-              <p className="text-gray-655 text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 {lang === 'tr'
                   ? <>İdeal bir silajın dane kırıcıları açık olacak şekilde ve partikül boyutu <strong>1.5 - 2.2 cm</strong> arasında olması gerekmektedir. Bu sayede sindirilebilirlik artar ve sıkıştırma kolaylaşır.</>
                   : <>An ideal silage should have its kernel processor active, and a particle size between <strong>1.5 - 2.2 cm</strong>. This increases digestibility and facilitates compression.</>}
@@ -118,7 +118,7 @@ export default function QualityView({ lang }) {
               <h4 className="text-xl font-bold text-gray-900 mb-3">
                 {lang === 'tr' ? 'Biçim Yüksekliği' : 'Cutting Height'}
               </h4>
-              <p className="text-gray-655 text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 {lang === 'tr'
                   ? <>Toprak kökenli zararlı bakterilerin silaja karışmaması için biçim yüksekliği minimum <strong>10-15 cm</strong> tutulmaktadır. Riskli zeminlerde bu oran 20 cm'ye kadar çıkarılır.</>
                   : <>Cutting height is kept at a minimum of <strong>10-15 cm</strong> to prevent soil-borne pathogen bacteria from mixing with the silage. In high-risk fields, this is raised up to 20 cm.</>}
@@ -129,7 +129,7 @@ export default function QualityView({ lang }) {
               <h4 className="text-xl font-bold text-gray-900 mb-3">
                 {lang === 'tr' ? 'Vakumlama Teknolojisi' : 'Vacuum Baling Technology'}
               </h4>
-              <p className="text-gray-655 text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 {lang === 'tr'
                   ? <>Oksijensiz ortamda fermantasyon sağlanarak hava ile temas sıfırlanır. Yüksek basınçlı presleme ile paketlenen silajlar <strong>24 ay boyunca</strong> tazeliğini korur.</>
                   : <>Anaerobic fermentation is ensured by complete exclusion of air. Silage packed with high-pressure compression retains its freshness for up to <strong>24 months</strong>.</>}

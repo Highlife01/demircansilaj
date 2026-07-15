@@ -10,7 +10,7 @@ export default function ProductsView({
   handleNavigation 
 }) {
   return (
-    <div className="pt-32 pb-24 bg-gray-55 min-h-screen animate-in fade-in duration-300 text-left">
+    <div className="pt-32 pb-24 bg-gray-50 min-h-screen animate-in fade-in duration-300 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-20">
@@ -25,7 +25,7 @@ export default function ProductsView({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {/* Product Card 1 */}
           <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col">
-            <div className="h-68 bg-green-955 relative overflow-hidden group">
+            <div className="h-68 bg-green-950 relative overflow-hidden group">
               <img 
                 src="/media/13.jpeg" 
                 alt="1000 kg Vakumlu Silaj" 
@@ -40,7 +40,7 @@ export default function ProductsView({
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 {t('productsPage.types.1000kg.title')}
               </h3>
-              <p className="text-gray-655 text-sm mb-8 leading-relaxed">
+              <p className="text-gray-600 text-sm mb-8 leading-relaxed">
                 {t('productsPage.types.1000kg.desc')}
               </p>
               <ul className="space-y-3.5 mb-8 flex-1">
@@ -84,7 +84,7 @@ export default function ProductsView({
 
           {/* Product Card 2 */}
           <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col">
-            <div className="h-68 bg-green-955 relative overflow-hidden group">
+            <div className="h-68 bg-green-950 relative overflow-hidden group">
               <img 
                 src="/media/14.jpeg" 
                 alt="500 kg Vakumlu Silaj" 
@@ -96,7 +96,7 @@ export default function ProductsView({
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 {t('productsPage.types.500kg.title')}
               </h3>
-              <p className="text-gray-655 text-sm mb-8 leading-relaxed">
+              <p className="text-gray-600 text-sm mb-8 leading-relaxed">
                 {t('productsPage.types.500kg.desc')}
               </p>
               <ul className="space-y-3.5 mb-8 flex-1">
@@ -140,7 +140,7 @@ export default function ProductsView({
 
           {/* Product Card 3 */}
           <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col">
-            <div className="h-68 bg-green-955 relative overflow-hidden group">
+            <div className="h-68 bg-green-950 relative overflow-hidden group">
               <img 
                 src="/media/tarla2.jpg" 
                 alt="Dökme Mısır Silajı" 
@@ -152,7 +152,7 @@ export default function ProductsView({
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 {t('productsPage.types.dokme.title')}
               </h3>
-              <p className="text-gray-655 text-sm mb-8 leading-relaxed">
+              <p className="text-gray-600 text-sm mb-8 leading-relaxed">
                 {t('productsPage.types.dokme.desc')}
               </p>
               <ul className="space-y-3.5 mb-8 flex-1">

@@ -6,11 +6,11 @@ export default function KnowledgeCenterView({ t, lang }) {
   const toggleAiFaq = (idx) => setOpenAiFaq(openAiFaq === idx ? null : idx);
 
   return (
-    <div className="pt-32 pb-24 bg-gray-55 min-h-screen animate-in fade-in duration-305 text-left">
+    <div className="pt-32 pb-24 bg-gray-50 min-h-screen animate-in fade-in duration-305 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Card */}
-        <div className="bg-gradient-to-br from-green-955 via-green-900 to-gray-900 rounded-3xl p-8 md:p-14 text-white mb-16 shadow-xl border border-green-900/20 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-green-950 via-green-900 to-gray-900 rounded-3xl p-8 md:p-14 text-white mb-16 shadow-xl border border-green-900/20 relative overflow-hidden">
           <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-green-500/10 rounded-full blur-3xl"></div>
           <div className="relative z-10 max-w-4xl">
             <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-400/10 border border-green-400/20 text-green-300 text-xs font-semibold tracking-wide mb-6">
@@ -19,7 +19,7 @@ export default function KnowledgeCenterView({ t, lang }) {
             <h1 className="text-4xl md:text-5xl font-black mb-6 leading-tight">
               {t('knowledgePage.title')}
             </h1>
-            <p className="text-sm md:text-base text-gray-305 font-light leading-relaxed max-w-3xl">
+            <p className="text-sm md:text-base text-gray-300 font-light leading-relaxed max-w-3xl">
               {t('knowledgePage.subtitle')}
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function KnowledgeCenterView({ t, lang }) {
               </div>
             </div>
 
-            <div className="mt-8 text-[10px] text-gray-400 leading-relaxed bg-gray-55 p-4 rounded-xl">
+            <div className="mt-8 text-[10px] text-gray-400 leading-relaxed bg-gray-50 p-4 rounded-xl">
               {lang === 'tr'
                 ? '* Bu veriler akredite yem ve ziraat laboratuvarlarında yapılan dönemsel testlerin ortalama analiz çıktısıdır.'
                 : '* This data represents average analysis output from periodic tests conducted in accredited agricultural and forage laboratories.'}
@@ -117,7 +117,7 @@ export default function KnowledgeCenterView({ t, lang }) {
               <CheckCircle className="h-5 w-5 text-green-600" /> {lang === 'tr' ? 'Bilimsel Referanslar' : 'Scientific References'}
             </h3>
             <div className="space-y-4">
-              <div className="p-4 bg-gray-55 rounded-xl text-[11px] leading-relaxed">
+              <div className="p-4 bg-gray-50 rounded-xl text-[11px] leading-relaxed">
                 <p className="font-bold text-gray-800">
                   {lang === 'tr' ? '1. Kuru Madde & Fermantasyon' : '1. Dry Matter & Fermentation'}
                 </p>
@@ -127,7 +127,7 @@ export default function KnowledgeCenterView({ t, lang }) {
                     : 'A DM ratio below 30% during silage harvest results in high effluent loss and butyric acid formation instead of lactic acid, reducing silage quality and palatability.'}
                 </p>
               </div>
-              <div className="p-4 bg-gray-55 rounded-xl text-[11px] leading-relaxed">
+              <div className="p-4 bg-gray-50 rounded-xl text-[11px] leading-relaxed">
                 <p className="font-bold text-gray-800">
                   {lang === 'tr' ? '2. pH ve Koruyuculuk İlişkisi' : '2. pH & Preservation Relationship'}
                 </p>
@@ -137,7 +137,7 @@ export default function KnowledgeCenterView({ t, lang }) {
                     : 'In an anaerobic environment (vacuum), lactic acid bacteria quickly lower the pH to 4.0 levels, inhibiting the growth of harmful pathogens (Listeria, Clostridium).'}
                 </p>
               </div>
-              <div className="p-4 bg-gray-55 rounded-xl text-[11px] leading-relaxed">
+              <div className="p-4 bg-gray-50 rounded-xl text-[11px] leading-relaxed">
                 <p className="font-bold text-gray-800">
                   {lang === 'tr' ? '3. Rasyon Nişasta Dengesi' : '3. Ration Starch Balance'}
                 </p>
@@ -202,7 +202,7 @@ export default function KnowledgeCenterView({ t, lang }) {
                   <ChevronRight className={`h-4.5 w-4.5 text-gray-400 transform transition-transform duration-250 ${openAiFaq === idx ? 'rotate-90 text-green-600' : ''}`} />
                 </button>
                 {openAiFaq === idx && (
-                  <div className="px-6 pb-6 pt-1 text-gray-650 text-xs leading-relaxed border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-6 pb-6 pt-1 text-gray-600 text-xs leading-relaxed border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     {item.a}
                   </div>
                 )}

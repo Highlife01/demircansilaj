@@ -302,7 +302,7 @@ export default function OrderDetailModal({ order, onClose, onSaveNote, onStatus,
                   type="number" 
                   value={editedFields.unitPrice}
                   onChange={(e) => setEditedFields({...editedFields, unitPrice: Number(e.target.value)})}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none text-sm bg-gray-55 focus:bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none text-sm bg-gray-50 focus:bg-white"
                 />
               </div>
             </div>

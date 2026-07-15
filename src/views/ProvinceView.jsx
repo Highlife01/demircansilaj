@@ -14,7 +14,7 @@ export default function ProvinceView({
 
   if (!prov) {
     return (
-      <div className="pt-40 pb-32 text-center bg-gray-55 min-h-screen">
+      <div className="pt-40 pb-32 text-center bg-gray-50 min-h-screen">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
           {lang === 'tr' ? 'Sayfa Bulunamadı' : 'Page Not Found'}
         </h1>
@@ -45,7 +45,7 @@ export default function ProvinceView({
                loading="eager"
                fetchpriority="high"
              />
-             <div className="absolute inset-0 bg-gradient-to-br from-green-955 via-green-900/90 to-black/85"></div>
+             <div className="absolute inset-0 bg-gradient-to-br from-green-950 via-green-900/90 to-black/85"></div>
            </div>
            <div className="relative z-10 max-w-4xl">
               <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold tracking-wide mb-6">
@@ -70,17 +70,17 @@ export default function ProvinceView({
               <span className="bg-green-100 p-2 rounded-xl text-green-600"><Star className="h-5 w-5 fill-current" /></span>
               {lang === 'tr' ? 'Bölgesel Rasyon Desteği' : 'Regional Ration Support'}
             </h2>
-            <p className="text-gray-655 text-sm leading-relaxed mb-6">
+            <p className="text-gray-600 text-sm leading-relaxed mb-6">
               {lang === 'tr'
                 ? `${prov.name} ilinde kayıtlı yaklaşık ${prov.cattle.toLocaleString('tr-TR')} büyükbaş ve ${prov.sheep.toLocaleString('tr-TR')} küçükbaş hayvan kapasitesi bulunmakta olup kaba yem rasyonu besi kalitesini doğrudan etkiler.`
                 : `There is a registered capacity of approximately ${prov.cattle.toLocaleString('en-US')} cattle and ${prov.sheep.toLocaleString('en-US')} sheep in the province of ${prov.name}, and the roughage ration directly affects fattening quality.`}
             </p>
-            <p className="text-gray-655 text-sm leading-relaxed mb-8">
+            <p className="text-gray-600 text-sm leading-relaxed mb-8">
               {lang === 'tr'
                 ? 'Demircan Silaj, ideal %30-35 kuru madde oranı ve 3.8-4.1 pH dengesi ile hayvanlarınızın sindirim sistemini korur, rasyonel verimliliği artırarak rasyon giderlerinizi en aza indirir.'
                 : 'Demircan Silage protects the digestive system of your animals with an ideal 30-35% dry matter ratio and 3.8-4.1 pH balance, maximizing efficiency and minimizing ration expenses.'}
             </p>
-            <div className="bg-gray-55 border-l-4 border-yellow-500 p-5 rounded-r-2xl text-xs font-medium text-gray-700 italic leading-relaxed">
+            <div className="bg-gray-50 border-l-4 border-yellow-500 p-5 rounded-r-2xl text-xs font-medium text-gray-700 italic leading-relaxed">
               {lang === 'tr'
                 ? `"Kaba yem kalitesi, rasyondaki konsantre yem ihtiyacını azaltarak maliyetleri %20'ye kadar düşürür. Adana'dan yola çıkan filomuz en geç ${prov.time} içinde kapınızdadır."`
                 : `"Roughage quality reduces the need for concentrate feed in the ration, lowering costs by up to 20%. Our fleet departing from Adana will be at your door within ${prov.time} at the latest."`}
@@ -104,7 +104,7 @@ export default function ProvinceView({
 
           {/* Column 3: Logistics Details & Stats */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-green-55/50 border border-green-100 p-6 rounded-2xl">
+            <div className="bg-green-50/50 border border-green-100 p-6 rounded-2xl">
               <h3 className="font-bold text-green-905 text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
                 <Truck className="h-4.5 w-4.5" /> {lang === 'tr' ? 'Lojistik Bilgi Tablosu' : 'Logistics Information Table'}
               </h3>
@@ -133,7 +133,7 @@ export default function ProvinceView({
                 <div className="text-2xl font-black text-green-700 mb-1">
                   {prov.cattle > 100000 ? `${Math.floor(prov.cattle/1000)}k+` : prov.cattle.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US')}
                 </div>
-                <div className="text-[9px] font-bold text-gray-405 uppercase tracking-wider">
+                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
                   {lang === 'tr' ? 'Büyükbaş Hayvan' : 'Cattle'}
                 </div>
               </div>
@@ -141,7 +141,7 @@ export default function ProvinceView({
                 <div className="text-2xl font-black text-green-700 mb-1">
                   {prov.sheep > 100000 ? `${Math.floor(prov.sheep/1000)}k+` : prov.sheep.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US')}
                 </div>
-                <div className="text-[9px] font-bold text-gray-405 uppercase tracking-wider">
+                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
                   {lang === 'tr' ? 'Küçükbaş Hayvan' : 'Sheep'}
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function ProvinceView({
         </div>
 
         {/* Region-Specific FAQ */}
-        <div className="bg-gray-55 rounded-3xl p-8 md:p-12 mb-16 border border-gray-100">
+        <div className="bg-gray-50 rounded-3xl p-8 md:p-12 mb-16 border border-gray-100">
           <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
             {lang === 'tr' ? `${prov.name} İçin Sık Sorulan Sorular` : `Frequently Asked Questions for ${prov.name}`}
           </h3>
@@ -198,7 +198,7 @@ export default function ProvinceView({
           </div>
         </div>
 
-        <div className="text-center bg-green-955 rounded-2xl p-8 text-white flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-center bg-green-950 rounded-2xl p-8 text-white flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-left">
             <h4 className="text-lg font-bold">
               {lang === 'tr' ? `${prov.name} Bölgesine Özel Fiyat Teklifi Alın` : `Get a Special Quote for ${prov.name} Region`}

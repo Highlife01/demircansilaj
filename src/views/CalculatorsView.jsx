@@ -66,7 +66,7 @@ export default function CalculatorsView({
   };
 
   return (
-    <div className="pt-32 pb-24 bg-gray-55 min-h-screen animate-in fade-in duration-300 text-left">
+    <div className="pt-32 pb-24 bg-gray-50 min-h-screen animate-in fade-in duration-300 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-16">
@@ -105,7 +105,7 @@ export default function CalculatorsView({
                         className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                           calcType === type.id 
                             ? 'border-green-600 bg-green-50/50 text-green-700 font-bold' 
-                            : 'border-gray-200 text-gray-650 hover:bg-gray-50'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                         }`}
                       >
                         <span className="block text-sm">{type.label}</span>
@@ -227,7 +227,7 @@ export default function CalculatorsView({
                 <select 
                   value={selectedProvId}
                   onChange={(e) => setSelectedProvId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-gray-55 text-sm text-gray-700 cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-gray-50 text-sm text-gray-700 cursor-pointer"
                 >
                   {provinces.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -250,7 +250,7 @@ export default function CalculatorsView({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 bg-gray-55 p-6 rounded-2xl border border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 bg-gray-50 p-6 rounded-2xl border border-gray-100">
               <div className="p-4 bg-white rounded-xl shadow-sm">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{t('calculatorsPage.productPrice')}</span>
                 <span className="text-lg font-extrabold text-gray-900 mt-1 block">{productCost.toLocaleString('tr-TR')} ₺</span>
@@ -263,7 +263,7 @@ export default function CalculatorsView({
                 </span>
                 <span className="text-[9px] text-gray-400 block mt-0.5">({activeProv.time})</span>
               </div>
-              <div className="p-4 bg-green-55 rounded-xl border border-green-100">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100">
                 <span className="text-[10px] text-green-700 font-bold uppercase tracking-wider block">{t('calculatorsPage.totalBudget')}</span>
                 <span className="text-lg font-black text-green-800 mt-1 block">{totalLogisticsCost.toLocaleString('tr-TR')} ₺</span>
                 <span className="text-[9px] text-green-600 block mt-0.5">{t('calculatorsPage.budgetNotice')}</span>
@@ -293,7 +293,7 @@ export default function CalculatorsView({
               <div className="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400"><TrendingUp className="h-6 w-6" /></div>
               <h2 className="text-2xl font-bold text-white">{lang === 'tr' ? 'Rasyon & ROI Tasarruf Analizörü' : 'Ration & ROI Savings Analyzer'}</h2>
             </div>
-            <p className="text-sm text-gray-405 mb-8 leading-relaxed">
+            <p className="text-sm text-gray-400 mb-8 leading-relaxed">
               {lang === 'tr' 
                 ? 'Premium vakumlu mısır silajımız, yüksek sindirilebilir lif ve nişasta oranı sayesinde rasyonunuzdaki pahalı konsantre (fabrika) yem oranını %30\'a kadar düşürürken, süt verimini artırır. Aşağıdan çiftlik verilerinizi girerek tasarrufunuzu hesaplayın.' 
                 : 'Our premium vacuumed corn silage reduces expensive concentrate feed by up to 30% and increases milk yield due to high digestible fiber and starch. Input your farm data below to see your net profit.'}
@@ -341,21 +341,21 @@ export default function CalculatorsView({
                 <span className={`text-lg font-extrabold mt-1 block ${dailySavings > 0 ? 'text-emerald-400' : 'text-yellow-500'}`}>
                   {dailySavings.toLocaleString('tr-TR')} ₺
                 </span>
-                <span className="text-[9px] text-gray-550 block mt-0.5">%30 konsantre yem ikamesi</span>
+                <span className="text-[9px] text-gray-500 block mt-0.5">%30 konsantre yem ikamesi</span>
               </div>
               <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Günlük Ek Süt Geliri' : 'Daily Extra Milk Income'}</span>
                 <span className="text-lg font-extrabold text-emerald-400 mt-1 block">
                   {dailyExtraMilkIncome.toLocaleString('tr-TR')} ₺
                 </span>
-                <span className="text-[9px] text-gray-550 block mt-0.5">+{roiAnimals * 2.5} Litre / gün (+2.5L verim)</span>
+                <span className="text-[9px] text-gray-500 block mt-0.5">+{roiAnimals * 2.5} Litre / gün (+2.5L verim)</span>
               </div>
               <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Aylık Ekstra Kâr' : 'Monthly Net Profit'}</span>
                 <span className="text-lg font-extrabold text-emerald-400 mt-1 block">
                   {monthlyRoiProfit.toLocaleString('tr-TR')} ₺
                 </span>
-                <span className="text-[9px] text-gray-550 block mt-0.5">{lang === 'tr' ? 'Toplam ek kazanç & tasarruf' : 'Total profit & savings'}</span>
+                <span className="text-[9px] text-gray-500 block mt-0.5">{lang === 'tr' ? 'Toplam ek kazanç & tasarruf' : 'Total profit & savings'}</span>
               </div>
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                 <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">{lang === 'tr' ? 'Amortisman Süresi (1 Tır)' : 'Payback Period (1 Truck)'}</span>

@@ -133,7 +133,7 @@ export default function ContactView({
   };
 
   return (
-    <div className="pt-32 pb-24 bg-gray-55 min-h-screen animate-in fade-in duration-300 text-left">
+    <div className="pt-32 pb-24 bg-gray-50 min-h-screen animate-in fade-in duration-300 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-16">
@@ -146,7 +146,7 @@ export default function ContactView({
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
           
           {/* Contact Info (Left Side) */}
-          <div className="lg:col-span-2 bg-green-955 p-10 md:p-12 text-white flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-green-950 p-10 md:p-12 text-white flex flex-col justify-between">
             <div>
               <h2 className="text-3xl font-bold mb-6">Bize Ulaşın</h2>
               <p className="text-green-200/80 mb-12 text-sm leading-relaxed font-light">
@@ -218,7 +218,7 @@ export default function ContactView({
                   <label className="block text-sm font-semibold text-gray-700 mb-2">{t('contactPage.phone')} *</label>
                   <input 
                     type="tel" 
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-55 focus:bg-white text-sm" 
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm" 
                     placeholder="0555 123 45 67" 
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -232,7 +232,7 @@ export default function ContactView({
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">{t('calculatorsPage.selectProv')} *</label>
                   <select 
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-55 focus:bg-white text-sm text-gray-700 cursor-pointer"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none bg-gray-50 focus:bg-white text-sm text-gray-700 cursor-pointer"
                     value={formData.provinceId}
                     onChange={(e) => setFormData({...formData, provinceId: e.target.value})}
                     required
@@ -331,7 +331,7 @@ export default function ContactView({
                 <button 
                   type="submit" 
                   disabled={orderStatus === 'sending'}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-550 text-white font-bold text-base py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-650 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-bold text-base py-4 rounded-xl hover:shadow-lg hover:from-green-700 hover:to-green-600 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {orderStatus === 'sending' ? (
                     <><Loader2 className="h-5 w-5 animate-spin" /> {lang === 'tr' ? 'İletiliyor...' : 'Sending...'}</>
@@ -362,7 +362,7 @@ export default function ContactView({
         {/* İletişim Mesaj Formu */}
         <div className="mt-16">
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden grid grid-cols-1 lg:grid-cols-2">
-            <div className="p-10 md:p-12 bg-gradient-to-br from-gray-900 to-green-955 text-white flex flex-col justify-center">
+            <div className="p-10 md:p-12 bg-gradient-to-br from-gray-900 to-green-950 text-white flex flex-col justify-center">
               <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-white/10 border border-white/15 text-green-300 text-xs font-semibold tracking-wide mb-6 w-fit">
                 <MessageCircle className="h-4 w-4 mr-2" /> BİZE YAZIN
               </span>
@@ -489,7 +489,7 @@ export default function ContactView({
                   <ChevronRight className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${openFaq === index ? 'rotate-90 text-green-600' : ''}`} />
                 </button>
                 {openFaq === index && (
-                  <div className="px-6 pb-6 pt-1 text-gray-600 text-sm leading-relaxed border-t border-gray-55 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-6 pb-6 pt-1 text-gray-600 text-sm leading-relaxed border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     {faq.a}
                   </div>
                 )}

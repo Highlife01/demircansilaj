@@ -564,9 +564,9 @@ export default function App() {
                 );
               }
               return (
-                <div className="pt-40 pb-32 text-center bg-gray-55 min-h-screen">
+                <div className="pt-40 pb-32 text-center bg-gray-50 min-h-screen">
                   <h1 className="text-3xl font-bold text-gray-900 mb-4">{lang === 'tr' ? 'Sayfa Bulunamadı' : 'Page Not Found'}</h1>
-                  <p className="text-gray-655 mb-8">{lang === 'tr' ? 'Aradığınız mısır silajı sayfası mevcut değil.' : 'The corn silage page you are looking for does not exist.'}</p>
+                  <p className="text-gray-600 mb-8">{lang === 'tr' ? 'Aradığınız mısır silajı sayfası mevcut değil.' : 'The corn silage page you are looking for does not exist.'}</p>
                   <button onClick={() => navigateTo('/')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold">{lang === 'tr' ? 'Ana Sayfaya Dön' : 'Return to Home'}</button>
                 </div>
               );
@@ -592,7 +592,7 @@ export default function App() {
           </button>
           
           <div 
-            className="max-w-4xl w-full bg-gray-955 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col animate-in zoom-in-95 duration-200"
+            className="max-w-4xl w-full bg-gray-950 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative aspect-video bg-black flex items-center justify-center">
@@ -612,7 +612,7 @@ export default function App() {
               )}
             </div>
             <div className="p-6 md:p-8 bg-gray-900 border-t border-gray-800 text-white text-left">
-              <h3 className="text-xl font-bold mb-2 text-green-450">{activeMedia.title}</h3>
+              <h3 className="text-xl font-bold mb-2 text-green-400">{activeMedia.title}</h3>
               <p className="text-gray-400 text-sm leading-relaxed">{activeMedia.desc}</p>
             </div>
           </div>
@@ -827,7 +827,7 @@ function Navbar({
                 key={item.id}
                 onClick={() => handleNavigation(item.id)}
                 className={`block w-full text-left px-4 py-3.5 text-base font-medium rounded-xl transition-all cursor-pointer ${
-                  activeTab === item.id ? 'text-green-700 bg-green-50 font-semibold' : 'text-gray-800 hover:bg-gray-55 hover:text-green-600'
+                  activeTab === item.id ? 'text-green-700 bg-green-50 font-semibold' : 'text-gray-800 hover:bg-gray-50 hover:text-green-600'
                 }`}
               >
                 {item.label}
@@ -870,7 +870,7 @@ function Navbar({
 
 function Footer({ navItems, handleNavigation, t, lang }) {
   return (
-    <footer className="bg-gray-955 text-gray-300 py-16 border-t-4 border-green-600">
+    <footer className="bg-gray-950 text-gray-300 py-16 border-t-4 border-green-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-left">
           <div className="col-span-1 md:col-span-1">
@@ -906,10 +906,10 @@ function Footer({ navItems, handleNavigation, t, lang }) {
               {lang === 'tr' ? 'Hizmetlerimiz' : 'Our Services'}
             </h3>
             <ul className="space-y-3">
-              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Vakumlu Mısır Silajı (1000 kg)' : 'Vacuum Corn Silage (1000 kg)'}</li>
-              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Vakumlu Mısır Silajı (500 kg)' : 'Vacuum Corn Silage (500 kg)'}</li>
-              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Dökme Mısır Silajı (Kamyon Bazlı)' : 'Bulk Corn Silage (Truck Based)'}</li>
-              <li className="text-sm text-gray-405">{lang === 'tr' ? 'Toptan Kaba Yem Tedariği' : 'Wholesale Forage Supply'}</li>
+              <li className="text-sm text-gray-400">{lang === 'tr' ? 'Vakumlu Mısır Silajı (1000 kg)' : 'Vacuum Corn Silage (1000 kg)'}</li>
+              <li className="text-sm text-gray-400">{lang === 'tr' ? 'Vakumlu Mısır Silajı (500 kg)' : 'Vacuum Corn Silage (500 kg)'}</li>
+              <li className="text-sm text-gray-400">{lang === 'tr' ? 'Dökme Mısır Silajı (Kamyon Bazlı)' : 'Bulk Corn Silage (Truck Based)'}</li>
+              <li className="text-sm text-gray-400">{lang === 'tr' ? 'Toptan Kaba Yem Tedariği' : 'Wholesale Forage Supply'}</li>
             </ul>
           </div>
           

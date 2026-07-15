@@ -90,11 +90,11 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
       </div>
 
       {/* Features Section */}
-      <div className="py-28 bg-gray-55">
+      <div className="py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">{t('whyUs.title')}</h2>
-            <p className="text-base text-gray-655 leading-relaxed">{t('whyUs.subtitle')}</p>
+            <p className="text-base text-gray-600 leading-relaxed">{t('whyUs.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -132,7 +132,7 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">{t('testimonials.title')}</h2>
-            <p className="text-base text-gray-655 leading-relaxed">{t('testimonials.subtitle')}</p>
+            <p className="text-base text-gray-600 leading-relaxed">{t('testimonials.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -159,14 +159,14 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
                 message: t('testimonials.default3Message')
               }
             ]).map((test) => (
-              <div key={test.id} className="bg-gray-55 rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left">
+              <div key={test.id} className="bg-gray-50 rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between text-left">
                 <div>
                   <div className="flex gap-1 mb-5 text-yellow-500">
                     {[...Array(test.rating || 5)].map((_, i) => (
                       <Star key={i} className="h-5 w-5 fill-current" />
                     ))}
                   </div>
-                  <p className="text-gray-655 italic text-sm leading-relaxed mb-6">"{test.message}"</p>
+                  <p className="text-gray-600 italic text-sm leading-relaxed mb-6">"{test.message}"</p>
                 </div>
                 <div className="flex items-center gap-3 pt-5 border-t border-gray-200/60">
                   <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center font-bold text-green-700 text-sm">
@@ -222,18 +222,18 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
                   className="absolute inset-0 w-full h-full object-cover"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-green-955 to-transparent opacity-80 lg:opacity-100 lg:w-32"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-green-950 to-transparent opacity-80 lg:opacity-100 lg:w-32"></div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Üretim ve Sevkiyat Galerisi */}
-      <div className="py-24 bg-gray-55 border-t border-gray-100">
+      <div className="py-24 bg-gray-50 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5">{t('gallery.title')}</h2>
-            <p className="text-base text-gray-655 leading-relaxed">
+            <p className="text-base text-gray-600 leading-relaxed">
               {t('gallery.subtitle')}
             </p>
           </div>
@@ -245,7 +245,7 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
                 onClick={() => setActiveMedia(item)}
                 className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative flex flex-col text-left"
               >
-                <div className="h-48 bg-gray-955 relative overflow-hidden flex items-center justify-center">
+                <div className="h-48 bg-gray-950 relative overflow-hidden flex items-center justify-center">
                   {item.type === 'image' ? (
                     <img 
                       src={item.src} 
