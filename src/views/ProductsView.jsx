@@ -86,7 +86,7 @@ export default function ProductsView({
           <div className="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col">
             <div className="h-68 bg-green-950 relative overflow-hidden group">
               <img 
-                src="/media/14.jpeg" 
+                src="/media/tarla2.jpg" 
                 alt="500 kg Vakumlu Silaj" 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85" 
                 loading="lazy"

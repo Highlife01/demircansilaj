@@ -77,7 +77,7 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
                 <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">{t('hero.stat1')}</p>
               </div>
               <div className="px-4">
-                <p className="text-3xl font-bold text-yellow-400 mb-1">24 Ay / Month</p>
+                <p className="text-3xl font-bold text-yellow-400 mb-1">24 Ay</p>
                 <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">{t('hero.stat2')}</p>
               </div>
               <div className="px-4">

@@ -514,11 +514,12 @@ export default function AdminDashboard({ user }) {
   const handleDuplicateBlog = async (blog) => {
     setSavingBlog(true);
     const slug = `${blog.slug}-kopya-${Math.floor(Math.random() * 1000)}`;
+    // Firestore'a `id: undefined` göndermemek için önce ayırıyoruz
+    const { id: _blogId, ...blogData } = blog;
     try {
       if (db && !blog.id.startsWith('blog-')) {
         await addDoc(collection(db, BLOGS_COLLECTION), {
-          ...blog,
-          id: undefined,
+          ...blogData,
           title: `${blog.title} (Kopya)`,
           slug,
           readCount: 0,
@@ -1872,7 +1873,7 @@ function OrderStatsBreakdown({ orders }) {
   );
 }
 
-function BlogManagementList({ blogs, onDelete, onAddClick, onEditClick, onDuplicateClick, _savingBlog }) {
+function BlogManagementList({ blogs, onDelete, onAddClick, onEditClick, onDuplicateClick, savingBlog }) {
   const [searchTerm, setSearchTerm] = useState('');
   
   const filtered = useMemo(() => {
@@ -1934,7 +1935,11 @@ function BlogManagementList({ blogs, onDelete, onAddClick, onEditClick, onDuplic
                   </span>
                 </td>
                 <td className="py-3 px-4 text-gray-400">
-                  {blog.createdAt?.toDate ? blog.createdAt.toDate().toLocaleDateString('tr-TR') : new Date(blog.createdAt).toLocaleDateString('tr-TR')}
+                  {blog.createdAt
+                    ? (blog.createdAt?.toDate
+                        ? blog.createdAt.toDate().toLocaleDateString('tr-TR')
+                        : (isNaN(new Date(blog.createdAt)) ? '—' : new Date(blog.createdAt).toLocaleDateString('tr-TR')))
+                    : '—'}
                 </td>
                 <td className="py-3 px-4">
                   <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] border ${

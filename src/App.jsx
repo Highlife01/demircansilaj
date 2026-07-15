@@ -97,18 +97,22 @@ export default function App() {
     }
   ]);
 
+  // Dil değiştiğinde yalnızca tek mesaj varsa (henüz kullanıcı konuşmadıysa) karşılama metnini güncelle.
+  // chatMessages.length dependency'den çıkartıldı — sonsuz döngü riskini önler.
+  const prevLangRef = React.useRef(lang);
   useEffect(() => {
-    if (chatMessages.length === 1) {
-      setChatMessages([
-        { 
-          sender: 'bot', 
-          text: lang === 'tr' 
-            ? 'Merhaba! Ben Demircan Silaj yapay zekâ asistanıyım. Size silaj ürünlerimiz, fiyatlarımız, kalite standartlarımız veya nakliye koşullarımız hakkında nasıl yardımcı olabilirim?' 
-            : 'Hello! I am the Demircan Silage AI assistant. How can I help you regarding our silage products, prices, quality standards, or logistics?'
-        }
-      ]);
-    }
-  }, [lang, chatMessages.length]);
+    if (prevLangRef.current === lang) return;
+    prevLangRef.current = lang;
+    setChatMessages(prev => {
+      if (prev.length !== 1) return prev; // Kullanıcı zaten konuşmuşsa dokunma
+      return [{ 
+        sender: 'bot', 
+        text: lang === 'tr' 
+          ? 'Merhaba! Ben Demircan Silaj yapay zekâ asistanıyım. Size silaj ürünlerimiz, fiyatlarımız, kalite standartlarımız veya nakliye koşullarımız hakkında nasıl yardımcı olabilirim?' 
+          : 'Hello! I am the Demircan Silage AI assistant. How can I help you regarding our silage products, prices, quality standards, or logistics?'
+      }];
+    });
+  }, [lang]);
 
   const getChatSuggestions = () => {
     return lang === 'tr'
@@ -585,7 +589,7 @@ export default function App() {
         >
           <button 
             onClick={() => setActiveMedia(null)}
-            className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all z-55 cursor-pointer"
+            className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all z-[55] cursor-pointer"
             aria-label="Kapat"
           >
             <X className="h-6 w-6" />
