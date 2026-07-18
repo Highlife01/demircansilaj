@@ -19,6 +19,7 @@ const AcademyView = lazy(() => import('./views/AcademyView.jsx'));
 const ProvinceView = lazy(() => import('./views/ProvinceView.jsx'));
 const DistrictView = lazy(() => import('./views/DistrictView.jsx'));
 const BlogView = lazy(() => import('./views/BlogView.jsx'));
+const RationConsultantView = lazy(() => import('./views/RationConsultantView.jsx'));
 
 const galleryItems = [
   { type: 'image', src: '/media/tarla1.jpg', title: 'Hasat Öncesi Mısır Kontrolü', desc: 'Mısırların olgunluk düzeylerinin hasat öncesi uzman ekibimiz tarafından sahada incelenmesi.' },
@@ -195,6 +196,7 @@ export default function App() {
     if (currentPath === '/kalite-ve-uretim') return 'quality';
     if (currentPath === '/iletisim-ve-siparis') return 'contact';
     if (currentPath === '/hesaplama-araclari') return 'calculators';
+    if (currentPath === '/rasyon-danismani') return 'rasyon';
     if (currentPath === '/bilgi-merkezi' || currentPath.startsWith('/bilgi-merkezi/')) return 'knowledge';
     if (currentPath === '/blog' || currentPath.startsWith('/blog/')) return 'blog';
     if (currentPath.startsWith('/il/')) return 'quality';
@@ -249,6 +251,7 @@ export default function App() {
     else if (id === 'quality') navigateTo('/kalite-ve-uretim');
     else if (id === 'contact') navigateTo('/iletisim-ve-siparis');
     else if (id === 'calculators') navigateTo('/hesaplama-araclari');
+    else if (id === 'rasyon') navigateTo('/rasyon-danismani');
     else if (id === 'knowledge') navigateTo('/bilgi-merkezi');
     else if (id === 'blog') navigateTo('/blog');
   };
@@ -466,6 +469,7 @@ export default function App() {
     { id: 'products', label: t('nav.products') },
     { id: 'quality', label: t('nav.quality') },
     { id: 'calculators', label: t('nav.calculators') },
+    { id: 'rasyon', label: t('nav.rasyon') },
     { id: 'blog', label: t('nav.blog') }
   ];
 
@@ -474,6 +478,7 @@ export default function App() {
     { id: 'products', label: t('nav.products') },
     { id: 'quality', label: t('nav.quality') },
     { id: 'calculators', label: t('nav.calculators') },
+    { id: 'rasyon', label: t('nav.rasyon') },
     { id: 'blog', label: t('nav.blog') },
     { id: 'knowledge', label: t('nav.knowledge') },
     { id: 'contact', label: t('nav.contact') }
@@ -502,6 +507,9 @@ export default function App() {
               handleNavigation={handleNavigation}
               setActiveMedia={setActiveMedia}
               galleryItems={galleryItems}
+              setFormData={setFormData}
+              selectedProvId={selectedProvId}
+              setSelectedProvId={setSelectedProvId}
             />
           )}
           {currentPath === '/urunlerimiz' && (
@@ -538,6 +546,12 @@ export default function App() {
               navigateTo={navigateTo}
               selectedProvId={selectedProvId}
               setSelectedProvId={setSelectedProvId}
+            />
+          )}
+          {currentPath === '/rasyon-danismani' && (
+            <RationConsultantView 
+              navigateTo={navigateTo}
+              setFormData={setFormData}
             />
           )}
           {currentPath === '/bilgi-merkezi' && (

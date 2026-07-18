@@ -204,4 +204,94 @@ exports.testEmail = functions.https.onRequest(async (req, res) => {
   }
 });
 
+// ============================================================
+// FUNCTION 4: Generate Blog using Gemini API (REST)
+// Trigger: HTTPS POST
+// ============================================================
+exports.generateBlogWithGemini = functions.https.onRequest(async (req, res) => {
+  // CORS Headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send('');
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
+  }
+
+  const { title } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  // Retrieve Gemini API Key from config or environment variables
+  const geminiKey = functions.config().gemini?.api_key || process.env.GEMINI_API_KEY;
+  if (!geminiKey) {
+    return res.status(500).json({ error: 'Gemini API Key is not configured' });
+  }
+
+  try {
+    const prompt = `Sen Türkiye'nin en büyük silaj ve kaba yem üreticisi Demircan Silaj'ın kıdemli Ar-Ge yazarı ve rasyon uzmanısın.
+    Senden "${title}" başlığı altında modern tarım ve hayvancılık standartlarına uygun, bilimsel veriler ve pratik çiftçi tavsiyeleri barındıran zengin bir blog makalesi yazmanı istiyoruz.
+    
+    Yazı şu kurallara uygun olmalıdır:
+    1. Makale içeriği profesyonel HTML formatında (örn: <h3>, <h4>, <p>, <ul>, <li>, <strong>) olmalıdır. Sakın \`\`\`html ya da markdown etiketleri koyma, düz ham HTML dizesi dön.
+    2. Kuru madde oranları (%30-35), koçan nişasta oranı (%30+), laktik asit fermantasyonu, pH kararlılığı (3.8-4.1) gibi teknik standartlara değinilmeli.
+    3. Çiftçilere rasyon maliyetini düşürme ve ROI (yatırım getirisi) konularında pratik tavsiyeler verilmeli.
+    4. Çıktıyı şu JSON formatında dönmelisin:
+    {
+      "category": "Makale Kategorisi (örn: Silaj, Besicilik, Büyükbaş, Hayvan Sağlığı)",
+      "excerpt": "Makalenin kısa ve dikkat çekici 1-2 cümlelik özeti",
+      "tags": "makale, etiketleri, virgul, ile, ayrilmis",
+      "content": "HTML formatındaki tüm makale gövdesi (h3, h4, p, ul, li içermeli)"
+    }
+    
+    Yanıt olarak YALNIZCA ve doğrudan bu geçerli JSON nesnesini dön, ek açıklama ya da markdown tırnakları (\`\`\`json) ekleme.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API returned status ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    const textResponse = responseData.candidates[0].content.parts[0].text;
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(textResponse);
+    } catch (jsonErr) {
+      console.warn("JSON parsing failed, fallback parsing:", jsonErr);
+      parsedData = {
+        category: "Silaj",
+        excerpt: "Mısır silajı kalitesi hakkında güncel teknik makale.",
+        tags: "silaj, yem, rasyon",
+        content: `<h3>${title}</h3><p>${textResponse}</p>`
+      };
+    }
+
+    return res.status(200).json(parsedData);
+
+  } catch (error) {
+    console.error('Error generating blog with Gemini:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 console.log('✅ Cloud Functions initialized successfully');

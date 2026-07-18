@@ -6,6 +6,7 @@ export const translations = {
       quality: "Kalite & Üretim",
       contact: "İletişim & Sipariş",
       calculators: "Hesaplama Araçları",
+      rasyon: "Rasyon Danışmanı",
       knowledge: "Bilgi Merkezi",
       blog: "Bilgi Portalı"
     },
@@ -181,6 +182,7 @@ export const translations = {
       quality: "Quality & Production",
       contact: "Contact & Order",
       calculators: "Calculators",
+      rasyon: "Ration Consultant",
       knowledge: "Info Hub",
       blog: "Knowledge Portal"
     },

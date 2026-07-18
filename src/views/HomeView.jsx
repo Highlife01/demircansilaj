@@ -5,8 +5,9 @@ import {
 } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, TESTIMONIALS_COLLECTION } from '../firebase';
+import TurkeyMap from '../components/TurkeyMap';
 
-export default function HomeView({ t, handleNavigation, setActiveMedia, galleryItems }) {
+export default function HomeView({ t, handleNavigation, setActiveMedia, galleryItems, setFormData, selectedProvId, setSelectedProvId }) {
   const [testimonials, setTestimonials] = useState([]);
 
   // Fetch testimonials locally in HomeView to avoid loading Firestore on other pages
@@ -124,6 +125,28 @@ export default function HomeView({ t, handleNavigation, setActiveMedia, galleryI
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Interactive Map Section */}
+      <div className="py-20 bg-gray-950 border-t border-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <TurkeyMap
+            selectedProvinceId={selectedProvId}
+            onProvinceSelect={(prov, triggerNavigate = false) => {
+              setSelectedProvId(prov.id);
+              if (setFormData) {
+                setFormData(prev => ({
+                  ...prev,
+                  provinceId: prov.id,
+                  location: `${prov.name}, Türkiye`
+                }));
+              }
+              if (triggerNavigate) {
+                handleNavigation('contact');
+              }
+            }}
+          />
         </div>
       </div>
 

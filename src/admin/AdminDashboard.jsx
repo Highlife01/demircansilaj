@@ -152,6 +152,78 @@ export default function AdminDashboard({ user }) {
   const firstOrdersLoad = useRef(true);
   const firstMessagesLoad = useRef(true);
 
+  // WhatsApp templates state
+  const [selectedWhatsAppOrder, setSelectedWhatsAppOrder] = useState(null);
+  const [whatsAppMessageText, setWhatsAppMessageText] = useState('');
+  const [activeWhatsAppTemplateId, setActiveWhatsAppTemplateId] = useState('teklif');
+
+  // Logs state
+  const [logs, setLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const logAdminAction = async (action, details = '') => {
+    try {
+      await addDoc(collection(db, 'demircan_admin_logs'), {
+        admin: user?.email || 'Bilinmeyen Admin',
+        action,
+        details,
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error('Error logging admin action:', err);
+    }
+  };
+
+  const handleSelectWhatsAppTemplate = (tmplId, order = selectedWhatsAppOrder) => {
+    if (!order) return;
+    setActiveWhatsAppTemplateId(tmplId);
+    
+    const clientName = order.name || 'Müşteri';
+    const loc = order.location || 'Bölgeniz';
+    const qty = order.quantity || 20;
+    const prod = order.productName || order.productType || 'Mısır Silajı';
+    
+    let text = '';
+    if (tmplId === 'teklif') {
+      text = `Merhaba ${clientName} Bey,\n\n${loc} bölgesi için ilettiğiniz ${qty} tonluk ${prod} talebinize özel nakliye dahil teklif detaylarımızı hazırladık.\n\nYakın zamanda görüşmek üzere.\n\nDemircan Silaj`;
+    } else if (tmplId === 'bilgi') {
+      text = `Merhaba ${clientName} Bey,\n\n${loc} bölgesi için ilettiğiniz ${qty} tonluk ${prod} sipariş talebinizi aldık. Sipariş durumunuzu en kısa sürede netleştirip sizinle iletişime geçeceğiz.\n\nDemircan Silaj`;
+    } else if (tmplId === 'tanitim') {
+      text = `Merhaba ${clientName} Bey,\n\nDemircan Silaj kaba yem çözümlerine gösterdiğiniz ilgi için teşekkür ederiz. 24 ay dayanıklı, %30 nişasta oranlı birinci sınıf vakumlu rulo paket silajlarımız hakkında detaylı bilgi ve analiz raporunu paylaşmamı ister misiniz?\n\nDemircan Silaj`;
+    }
+    setWhatsAppMessageText(text);
+  };
+
+  const handleOpenWhatsAppTemplates = (order) => {
+    setSelectedWhatsAppOrder(order);
+    handleSelectWhatsAppTemplate('teklif', order);
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!selectedWhatsAppOrder) return;
+    const phone = (selectedWhatsAppOrder.phone || '').replace(/\D/g, '').replace(/^0/, '90');
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(whatsAppMessageText)}`;
+    window.open(url, '_blank');
+    logAdminAction('WhatsApp Mesajı Gönderildi', `${selectedWhatsAppOrder.name} (${selectedWhatsAppOrder.phone}) - Şablon: ${activeWhatsAppTemplateId}`);
+    setSelectedWhatsAppOrder(null);
+  };
+
+  // Load audit logs when logs tab is selected
+  useEffect(() => {
+    if (db && tab === 'logs') {
+      setLoadingLogs(true);
+      const qLogs = query(collection(db, 'demircan_admin_logs'), orderBy('createdAt', 'desc'));
+      const unsubLogs = onSnapshot(qLogs, (snap) => {
+        setLogs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setLoadingLogs(false);
+      }, (err) => {
+        console.error(err);
+        setLoadingLogs(false);
+      });
+      return () => unsubLogs();
+    }
+  }, [tab]);
+
   // Load pricing rules when pricing tab is selected
   useEffect(() => {
     const fetchPricingRules = async () => {
@@ -383,6 +455,7 @@ export default function AdminDashboard({ user }) {
   const toggleTestimonialApproval = async (id, currentApproved) => {
     try {
       await updateDoc(doc(db, TESTIMONIALS_COLLECTION, id), { approved: !currentApproved });
+      logAdminAction('Yorum Onay Durumu Değiştirildi', `ID: ${id}, Yeni Durum: ${!currentApproved ? 'Onaylı' : 'Onaysız'}`);
     } catch (err) { console.error(err); }
   };
 
@@ -399,6 +472,7 @@ export default function AdminDashboard({ user }) {
         approved: true,
         createdAt: serverTimestamp()
       });
+      logAdminAction('Yorum Eklendi', `Yazar: ${newTestimonial.name}, Firma: ${newTestimonial.company}`);
       setNewTestimonial({ name: '', company: '', rating: 5, message: '' });
       setShowAddTestimonial(false);
     } catch (err) {
@@ -422,6 +496,7 @@ export default function AdminDashboard({ user }) {
         silageStock: Number(newCompany.silageStock || 0),
         createdAt: serverTimestamp()
       });
+      logAdminAction('Firma Eklendi', `Firma: ${newCompany.name}, Stok: ${newCompany.silageStock} ton`);
       setNewCompany({ name: '', address: '', email: '', phone: '', contactPerson: '', silageStock: 0 });
       setShowAddCompany(false);
     } catch (err) {
@@ -437,6 +512,7 @@ export default function AdminDashboard({ user }) {
       await updateDoc(doc(db, COMPANIES_COLLECTION, id), {
         silageStock: Number(newStock)
       });
+      logAdminAction('Firma Stoğu Güncellendi', `Firma ID: ${id}, Yeni Stok: ${newStock} ton`);
       setEditingStockId(null);
     } catch (err) {
       console.error(err);
@@ -469,6 +545,7 @@ export default function AdminDashboard({ user }) {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+        logAdminAction('Yeni Makale Eklendi', `Makale: ${newBlog.title}`);
       }
       setNewBlog({
         title: '',
@@ -561,9 +638,11 @@ export default function AdminDashboard({ user }) {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+        logAdminAction('Blog Kopyalandı', `Makale: ${blog.title} -> Kopya: ${blog.title} (Kopya)`);
       } else {
         const mockId = 'blog-' + Date.now();
         setBlogs(prev => [{ ...blog, id: mockId, title: `${blog.title} (Kopya)`, slug, readCount: 0, createdAt: new Date().toISOString() }, ...prev]);
+        logAdminAction('Blog Kopyalandı (Yerel)', `Makale: ${blog.title}`);
       }
     } catch (err) {
       console.error(err);
@@ -577,103 +656,112 @@ export default function AdminDashboard({ user }) {
   const handleAiGenerateBlog = async (title) => {
     if (!title) return;
     setAiGenerating(true);
-    
-    await new Promise(r => setTimeout(r, 1200));
-    
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const titleLower = title.toLowerCase();
-    
-    let generatedContent = '';
-    let category = 'Büyükbaş';
-    let tags = 'silaj, besleme, rasyon';
-    let excerpt = '';
-    
-    if (titleLower.includes('mısır') || titleLower.includes('misir')) {
-      category = 'Silaj';
-      tags = 'mısırsılajı, kabayem, besleme, fermantasyon';
-      excerpt = 'Premium mısır silajının ideal kuru madde oranı, koçan olgunluğu, pH dengesi ve rasyon verimliliğine etkilerini detaylıca inceleyen teknik rehber.';
-      generatedContent = `
-        <h3>Mısır Silajında Kalite ve Verim Kriterleri</h3>
-        <p>Mısır silajı, yüksek enerjili kaba yem ihtiyacının karşılanmasında modern hayvancılık işletmelerinin en büyük yardımcısıdır. Ancak mısır silajının hayvansal verime (süt ve et performansı) maksimum katkı sağlayabilmesi için belirli kalite kriterlerine sahip olması gerekir.</p>
-        
-        <h4>1. İdeal Kuru Madde (KM) Oranı</h4>
-        <p>Mısır silajı biçilirken kuru madde oranının <strong>%30-35</strong> (nem oranının %65-70) aralığında olması hedeflenmelidir. Kuru maddenin %30'un altında olması durumunda, silajda aşırı ekşime (bütirik asit oluşumu) ve besin değeri yüksek sızıntı suyu kayıpları yaşanır. %35'in üzerindeki kuru maddede ise yemin sıkıştırılması zorlaşır, oksijen cepleri kalır ve küflenme riski artar.</p>
-        
-        <h4>2. Koçan Olgunluğu ve Nişasta Değeri</h4>
-        <p>Mısır silajındaki enerjinin ana kaynağı danelerdeki nişastadır. Optimum hasat zamanı, danelerdeki süt çizgisinin 1/2 ila 2/3 seviyesine geldiği dönemdir. Bu aşamada biçilen mısır, kuru maddede %28-35 oranında nişasta içerir ve dane kırıcı (kernel processor) kullanılarak parçalanmalıdır.</p>
-        
-        <h4>3. Vakumlu Paketlemenin Önemi</h4>
-        <p>Vakumlu rulo paketleme teknolojisi, biçilen yemin hava ile temasını anında keserek anaerobik ortam sağlar. Bu durum fermantasyonun (pH 3.8-4.1) hızla tamamlanmasını sağlar ve küflenme ile kızışma riskini sıfıra indirerek yemin 24 ay boyunca taze kalmasını garanti eder.</p>
-      `;
-    } else if (titleLower.includes('rasyon') || titleLower.includes('tmr') || titleLower.includes('yem')) {
-      category = 'Besicilik';
-      tags = 'rasyon, tmr, yemtasarrufu, buyukbas';
-      excerpt = 'Yüksek kaliteli mısır silajı kullanarak rasyondaki konsantre yem ihtiyacını azaltma ve toplam yem maliyetlerini düşürme stratejileri.';
-      generatedContent = `
-        <h3>Rasyon Maliyetini Düşürmede Kaliteli Kaba Yem Kullanımı</h3>
-        <p>Modern süt ve besi hayvancılığında işletme giderlerinin %70'inden fazlasını yem maliyetleri oluşturmaktadır. Bu giderlerin büyük bölümü ise fabrika (konsantre) yemlerinden kaynaklanır. Kaliteli mısır silajı kullanarak TMR (Toplam Karışım Rasyon) maliyetlerini düşürmek mümkündür.</p>
-        
-        <h4>1. Konsantre Yem İkamesi</h4>
-        <p>İdeal fermente olmuş, yüksek nişastalı (%30 üzeri) ve sindirilebilir lif (NDF/ADF) yapısına sahip premium mısır silajları, rasyondaki enerjiyi doğal yollarla karşılar. Rasyona dahil edilen her 1 kg kaliteli silaj, fabrika yemi ihtiyacını azaltarak toplam rasyon maliyetinde %20-30 oranında tasarruf sağlar.</p>
-        
-        <h4>2. Rumen Sağlığı ve Asidoz Önleme</h4>
-        <p>Sadece konsantre yemle beslenen hayvanlarda işkembe asitliği (pH) tehlikeli seviyelere düşer ve subklinik asidoz gelişir. Kaliteli kaba yemlerin TMR olarak homojen şekilde sunulması geviş getirmeyi uyarır, tükürük salgısını artırır ve rumen pH'ını dengeler.</p>
-        
-        <h4>3. Yem Çevrim Oranını İyileştirme</h4>
-        <p>Sindirilebilirliği %72-75 aralığında olan vakumlu silajlar, hayvanın sindirim sistemini yormaz. Yemden yararlanma oranını maksimize eder.</p>
-      `;
-    } else if (titleLower.includes('ph') || titleLower.includes('fermantasyon') || titleLower.includes('bozulma')) {
-      category = 'Hayvan Sağlığı';
-      tags = 'fermantasyon, ph, silajanalizi, aflatoksin';
-      excerpt = 'Silaj fermantasyon kimyası, pH kararlılığı ve yemin açıldıktan sonra bozulmasını (aerobik kararsızlık) engelleme yöntemleri.';
-      generatedContent = `
-        <h3>Silajda Fermantasyon Kalitesi ve pH Kararlılığı</h3>
-        <p>Silaj yapımı, özünde yeşil yemlerin laktik asit bakterileri tarafından fermente edilerek korunması (turşulaştırılması) işlemidir. Fermantasyonun başarısı, silajın besin değerini ve hayvana yedirilebilirliğini belirler.</p>
-        
-        <h4>1. pH Düşüş Hızı</h4>
-        <p>Hasat edilip sıkıştırılan silajda oksijen tükendiğinde laktik asit bakterileri çoğalmaya başlar ve ortamdaki şekerleri laktik aside çevirir. Bu asit oluşumu pH seviyesini hızlıca <strong>3.8 - 4.1</strong> aralığına indirmelidir. Hızlı pH düşüşü, bütirik asit üreten zararlı Clostridium bakterilerinin üremesini engeller.</p>
-        
-        <h4>2. Küf ve Aflatoksin Riskleri</h4>
-        <p>Sıkıştırmanın yetersiz yapıldığı veya ambalajın zarar görüp hava aldığı durumlarda aerobik mantarlar ve küfler çoğalır. Bu küfler, süt yoluyla insanlara da geçebilen ve kanserojen olan <strong>aflatoksin</strong> birikimine yol açar. Vakumlu koruma bu riski tamamen ortadan kaldırır.</p>
-        
-        <h4>3. Kaliteli Fermantasyon Belirtileri</h4>
-        <p>Başarılı fermente olmuş kaliteli bir silaj, zeytin yeşili/sarımtırak renge ve hafif ekşi, meyvemsi, hoş bir kokuya sahiptir. Siyahlaşmış, çamurlu renk ve ağır gübre kokusu (bütirik asit) fermantasyon başarısızlığını gösterir.</p>
-      `;
-    } else {
-      category = 'Silaj';
-      tags = 'silaj, kabayem, tarim, hayvancilik';
-      excerpt = `${title} konusu hakkında kaba yem rasyon verimliliği, modern paketleme teknikleri ve hayvancılık sektörü analizleri rehberi.`;
-      generatedContent = `
-        <h3>${title} Hakkında Teknik Değerlendirmeler</h3>
-        <p>Demircan Silaj Ar-Ge birimi tarafından hazırlanan bu teknik rehberde, ${title} konusunun modern tarım ve hayvancılık işletmeleri için önemi ele alınmaktadır. Hayvan beslemede kaba yem kalitesi, doğrudan verim artışı ve rasyon tasarrufu ile ilişkilidir.</p>
-        
-        <h4>1. Bilimsel Besleme Standartları</h4>
-        <p>Yüksek süt verimi ve besi performansı için rasyonların protein, nişasta ve lif oranlarının dengelenmesi gerekir. Bu dengelemede kullanılan kaba yemlerin sindirilebilirlik oranları, hayvanın yemden yararlanma başarısını belirleyen en temel etkendir.</p>
-        
-        <h4>2. Kalite ve Analizlerin Önemi</h4>
-        <p>Çiftliklerde kullanılan kaba yemlerin laboratuvar analizlerinin yapılması ve NDF, ADF, pH değerlerinin bilinmesi rasyonun doğru ayarlanmasını sağlar. Vakumlu paketleme, bu değerlerin 24 ay boyunca hiç kaybolmadan korunmasına yardımcı olur.</p>
-      `;
+    try {
+      const response = await fetch('https://us-central1-finansarena-bdae9.cloudfunctions.net/generateBlogWithGemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      if (!response.ok) throw new Error('Cloud function failed');
+      const data = await response.json();
+      
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.floor(Math.random() * 1000);
+      
+      setAiGenerating(false);
+      logAdminAction('AI Makale Oluşturuldu', `Başlık: ${title}`);
+      return {
+        title,
+        slug,
+        category: data.category || 'Silaj',
+        excerpt: data.excerpt || `${title} hakkında teknik inceleme.`,
+        content: data.content || 'İçerik yüklenemedi.',
+        coverImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
+        tags: data.tags || 'silaj, besleme, rasyon',
+        seoTitle: `${title} | Demircan Silaj Bilgi Merkezi`,
+        seoDescription: data.excerpt ? data.excerpt.slice(0, 150) : `${title} hakkında bilimsel rasyon verileri.`,
+        author: 'Demircan AI Yazarı',
+        status: 'published'
+      };
+    } catch (err) {
+      console.warn("Real Gemini generation failed, calling fallback content:", err);
+      // Fallback: use local template generation so it never breaks!
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const titleLower = title.toLowerCase();
+      let generatedContent = '';
+      let category = 'Büyükbaş';
+      let tags = 'silaj, besleme, rasyon';
+      let excerpt = '';
+      
+      if (titleLower.includes('mısır') || titleLower.includes('misir')) {
+        category = 'Silaj';
+        tags = 'mısırsılajı, kabayem, besleme, fermantasyon';
+        excerpt = 'Premium mısır silajının ideal kuru madde oranı, koçan olgunluğu, pH dengesi ve rasyon verimliliğine etkilerini detaylıca inceleyen teknik rehber.';
+        generatedContent = `
+          <h3>Mısır Silajında Kalite ve Verim Kriterleri</h3>
+          <p>Mısır silajı, yüksek enerjili kaba yem ihtiyacının karşılanmasında modern hayvancılık işletmelerinin en büyük yardımcısıdır. Ancak mısır silajının hayvansal verime (süt ve et performansı) maksimum katkı sağlayabilmesi için belirli kalite kriterlerine sahip olması gerekir.</p>
+          
+          <h4>1. İdeal Kuru Madde (KM) Oranı</h4>
+          <p>Mısır silajı biçilirken kuru madde oranının <strong>%30-35</strong> (nem oranının %65-70) aralığında olması hedeflenmelidir. Kuru maddenin %30'un altında olması durumunda, silajda aşırı ekşime (bütirik asit oluşumu) ve besin değeri yüksek sızıntı suyu kayıpları yaşanır. %35'in üzerindeki kuru maddede ise yemin sıkıştırılması zorlaşır, oksijen cepleri kalır ve küflenme riski artar.</p>
+          
+          <h4>2. Koçan Olgunluğu ve Nişasta Değeri</h4>
+          <p>Mısır silajındaki enerjinin ana kaynağı danelerdeki nişastadır. Optimum hasat zamanı, danelerdeki süt çizgisinin 1/2 ila 2/3 seviyesine geldiği dönemdir. Bu aşamada biçilen mısır, kuru maddede %28-35 oranında nişasta içerir ve dane kırıcı (kernel processor) kullanılarak parçalanmalıdır.</p>
+          
+          <h4>3. Vakumlu Paketlemenin Önemi</h4>
+          <p>Vakumlu rulo paketleme teknolojisi, biçilen yemin hava ile temasını anında keserek anaerobik ortam sağlar. This keeps the silage fresh and clean.</p>
+        `;
+      } else if (titleLower.includes('rasyon') || titleLower.includes('tmr') || titleLower.includes('yem')) {
+        category = 'Besicilik';
+        tags = 'rasyon, tmr, yemtasarrufu, buyukbas';
+        excerpt = 'Yüksek kaliteli mısır silajı kullanarak rasyondaki konsantre yem ihtiyacını azaltma ve toplam yem maliyetlerini düşürme stratejileri.';
+        generatedContent = `
+          <h3>Rasyon Maliyetini Düşürmede Kaliteli Kaba Yem Kullanımı</h3>
+          <p>Modern süt ve besi hayvancılığında işletme giderlerinin %70'inden fazlasını yem maliyetleri oluşturmaktadır. Bu giderlerin büyük bölümü ise fabrika (konsantre) yemlerinden kaynaklanır. Kaliteli mısır silajı kullanarak TMR (Toplam Karışım Rasyon) maliyetlerini düşürmek mümkündür.</p>
+          
+          <h4>1. Konsantre Yem İkamesi</h4>
+          <p>İdeal fermente olmuş, yüksek nişastalı (%30 üzeri) ve sindirilebilir lif (NDF/ADF) yapısına sahip premium mısır silajları, rasyondaki enerjiyi doğal yollarla karşılar. Rasyona dahil edilen her 1 kg kaliteli silaj, fabrika yemi ihtiyacını azaltarak toplam rasyon maliyetinde %20-30 oranında tasarruf sağlar.</p>
+        `;
+      } else if (titleLower.includes('ph') || titleLower.includes('fermantasyon') || titleLower.includes('bozulma')) {
+        category = 'Hayvan Sağlığı';
+        tags = 'fermantasyon, ph, silajanalizi, aflatoksin';
+        excerpt = 'Silaj fermantasyon kimyası, pH kararlılığı ve yemin açıldıktan sonra bozulmasını (aerobik kararsızlık) engelleme yöntemleri.';
+        generatedContent = `
+          <h3>Silajda Fermantasyon Kalitesi ve pH Kararlılığı</h3>
+          <p>Silaj yapımı, özünde yeşil yemlerin laktik asit bakterileri tarafından fermente edilerek korunması (turşulaştırılması) işlemidir. Fermantasyonun başarısı, silajın besin değerini ve hayvana yedirilebilirliğini belirler.</p>
+        `;
+      } else {
+        category = 'Silaj';
+        tags = 'silaj, kabayem, tarim, hayvancilik';
+        excerpt = `${title} konusu hakkında kaba yem rasyon verimliliği, modern paketleme teknikleri ve hayvancılık sektörü analizleri rehberi.`;
+        generatedContent = `
+          <h3>${title} Hakkında Teknik Değerlendirmeler</h3>
+          <p>Demircan Silaj Ar-Ge birimi tarafından hazırlanan bu teknik rehberde, ${title} konusunun modern tarım ve hayvancılık işletmeleri için önemi ele alınmaktadır.</p>
+        `;
+      }
+      
+      setAiGenerating(false);
+      logAdminAction('AI Makale Oluşturuldu (Yerel Şablon)', `Başlık: ${title}`);
+      return {
+        title,
+        slug,
+        category,
+        excerpt,
+        content: generatedContent,
+        coverImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
+        tags,
+        seoTitle: `${title} | Demircan Silaj Bilgi Merkezi`,
+        seoDescription: `${title} hakkında bilimsel rasyon verileri.`,
+        author: 'Demircan AI Yazarı',
+        status: 'published'
+      };
     }
-    
-    setAiGenerating(false);
-    return {
-      title,
-      slug,
-      category,
-      excerpt,
-      content: generatedContent,
-      coverImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
-      tags,
-      seoTitle: `${title} | Demircan Silaj Bilgi Merkezi`,
-      seoDescription: `${title} hakkında bilimsel rasyon verileri ve modern kaba yem depolama rehberi.`,
-      author: 'Demircan AI Yazarı',
-      status: 'published'
-    };
   };
 
   const removeDoc = async (coll, id) => {
     if (!window.confirm('Bu kaydı kalıcı olarak silmek istediğinize emin misiniz?')) return;
-    try { await deleteDoc(doc(db, coll, id)); }
+    try { 
+      await deleteDoc(doc(db, coll, id)); 
+      logAdminAction('Kayıt Silindi', `Koleksiyon: ${coll}, ID: ${id}`);
+    }
     catch (err) { console.error(err); }
   };
 
@@ -681,6 +769,7 @@ export default function AdminDashboard({ user }) {
     setSavingPricing(true);
     try {
       await setDoc(doc(db, PRICING_RULES_COLLECTION, 'current'), pricingRules);
+      logAdminAction('Fiyat Kuralları Güncellendi', `Dökme Fiyatı: ${pricingRules.baseProductPrice} TL/ton, Paket Fiyatı: ${pricingRules.silagePrice} TL/kg`);
       alert('Fiyat ve kural parametreleri başarıyla güncellendi! Sitedeki tüm hesaplama araçları yeni fiyatları kullanacaktır.');
     } catch (err) {
       console.error('Error saving pricing rules:', err);
@@ -838,6 +927,12 @@ export default function AdminDashboard({ user }) {
               <Banknote className="h-4 w-4" /> Fiyat Kuralları
             </button>
             <button
+              onClick={() => setTab('logs')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'logs' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              <Activity className="h-4 w-4" /> İşlem Günlüğü
+            </button>
+            <button
               onClick={() => setTab('analytics')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'analytics' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
@@ -917,7 +1012,13 @@ export default function AdminDashboard({ user }) {
         ) : tab === 'orders' ? (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-3">
-              <OrdersList orders={filteredOrders} onStatus={setOrderStatus} onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} onOpen={setSelectedOrder} />
+              <OrdersList 
+                orders={filteredOrders} 
+                onStatus={setOrderStatus} 
+                onDelete={(id) => removeDoc(ORDERS_COLLECTION, id)} 
+                onOpen={setSelectedOrder} 
+                onWhatsAppClick={handleOpenWhatsAppTemplates}
+              />
             </div>
             <div className="lg:col-span-1">
               <LiveFeed feed={feed} onOpenOrder={setSelectedOrder} onGoMessages={() => setTab('messages')} />
@@ -973,6 +1074,14 @@ export default function AdminDashboard({ user }) {
               saving={savingPricing} 
             />
           )
+        ) : tab === 'logs' ? (
+          loadingLogs ? (
+            <div className="flex items-center justify-center py-24 text-gray-500">
+              <Loader2 className="h-6 w-6 animate-spin mr-3" /> Günlük kayıtları alınıyor...
+            </div>
+          ) : (
+            <AuditLogsList logs={logs} />
+          )
         ) : (
           <div className="space-y-6">
             {orders.length > 0 ? (
@@ -997,6 +1106,77 @@ export default function AdminDashboard({ user }) {
           onStatus={setOrderStatus}
           onUpdateOrder={updateOrder}
         />
+      )}
+
+      {/* WhatsApp Şablon Modalı */}
+      {selectedWhatsAppOrder && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 w-full max-w-lg text-left relative shadow-2xl">
+            <button 
+              onClick={() => setSelectedWhatsAppOrder(null)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer animate-none"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2 border-b border-white/5 pb-3">
+              <MessageSquare className="text-emerald-450 h-5 w-5" /> WhatsApp Mesaj Şablonları
+            </h3>
+            
+            <p className="text-xs text-gray-405 mb-4 font-light">
+              <strong className="text-white font-bold">{selectedWhatsAppOrder.name}</strong> müşterisine iletilecek mesaj şablonunu seçin ve isteğe göre düzenleyin.
+            </p>
+
+            <div className="space-y-4">
+              {/* Şablon Seçiciler */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  { id: 'teklif', label: '1. Fiyat Teklifi' },
+                  { id: 'bilgi', label: '2. Sipariş Alındı' },
+                  { id: 'tanitim', label: '3. Genel Tanıtım' },
+                ].map(tmpl => (
+                  <button
+                    key={tmpl.id}
+                    onClick={() => handleSelectWhatsAppTemplate(tmpl.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      activeWhatsAppTemplateId === tmpl.id
+                        ? 'bg-emerald-500 text-black border-emerald-400 font-black shadow-lg shadow-emerald-500/10'
+                        : 'bg-white/[0.02] border-white/10 text-gray-300 hover:border-white/20'
+                    }`}
+                  >
+                    {tmpl.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Mesaj Düzenleme Alanı */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Mesaj İçeriği</label>
+                <textarea
+                  value={whatsAppMessageText}
+                  onChange={(e) => setWhatsAppMessageText(e.target.value)}
+                  rows="6"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-sans leading-relaxed resize-none"
+                />
+              </div>
+
+              {/* Gönderme Butonları */}
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5">
+                <button
+                  onClick={() => setSelectedWhatsAppOrder(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 text-gray-300 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  onClick={handleSendWhatsApp}
+                  className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black px-6 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer"
+                >
+                  <MessageCircle className="h-4 w-4" /> WhatsApp ile Gönder
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Yeni Yorum Ekleme Modalı */}
@@ -1598,7 +1778,7 @@ function EmptyState({ icon, text }) {
   );
 }
 
-function OrdersList({ orders, onStatus, onDelete, onOpen }) {
+function OrdersList({ orders, onStatus, onDelete, onOpen, onWhatsAppClick }) {
   if (orders.length === 0) return <EmptyState icon={<Inbox className="h-10 w-10" />} text="Henüz sipariş bulunmuyor." />;
 
   return (
@@ -1649,13 +1829,13 @@ function OrdersList({ orders, onStatus, onDelete, onOpen }) {
 
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/5">
               <div className="flex items-center gap-1.5">
-                <button onClick={() => onStatus(o.id, 'contacted')} title="İletişime geçildi" className="p-2 rounded-lg text-amber-400 hover:bg-amber-500/10 transition-colors"><PhoneCall className="h-4 w-4" /></button>
-                <button onClick={() => onStatus(o.id, 'completed')} title="Tamamlandı" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"><CheckCircle2 className="h-4 w-4" /></button>
-                <a href={`https://wa.me/${(o.phone || '').replace(/\D/g, '').replace(/^0/, '90')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"><MessageSquare className="h-4 w-4" /></a>
+                <button onClick={() => onStatus(o.id, 'contacted')} title="İletişime geçildi" className="p-2 rounded-lg text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"><PhoneCall className="h-4 w-4" /></button>
+                <button onClick={() => onStatus(o.id, 'completed')} title="Tamamlandı" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"><CheckCircle2 className="h-4 w-4" /></button>
+                <button onClick={() => onWhatsAppClick(o)} title="WhatsApp Şablonları" className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"><MessageSquare className="h-4 w-4" /></button>
               </div>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => onOpen(o)} className="text-xs font-semibold text-gray-300 hover:text-emerald-300 bg-white/[0.04] hover:bg-emerald-500/10 px-3 py-2 rounded-lg transition-colors">Detay</button>
-                <button onClick={() => onDelete(o.id)} title="Sil" className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => onOpen(o)} className="text-xs font-semibold text-gray-300 hover:text-emerald-300 bg-white/[0.04] hover:bg-emerald-500/10 px-3 py-2 rounded-lg transition-colors cursor-pointer">Detay</button>
+                <button onClick={() => onDelete(o.id)} title="Sil" className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
           </div>
@@ -2295,6 +2475,61 @@ function PricingRulesEditor({ pricingRules, setPricingRules, onSave, saving }) {
             <p className="text-[10px] text-gray-500 mt-1">Yonca, saman veya diğer kaba yemlerin ortalama kg fiyatı.</p>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditLogsList({ logs }) {
+  if (logs.length === 0) return <EmptyState icon={<Activity className="h-10 w-10" />} text="Henüz bir sistem günlüğü kaydı bulunmuyor." />;
+
+  return (
+    <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 text-left animate-in fade-in duration-200">
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-white">Sistem İşlem Günlükleri (Audit Logs)</h3>
+        <p className="text-xs text-gray-400">Yöneticiler tarafından gerçekleştirilen tüm veri değişiklikleri ve operasyonların geçmişi.</p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/10 text-gray-400 font-bold uppercase tracking-wider bg-white/[0.02]">
+              <th className="py-3 px-4">Tarih / Saat</th>
+              <th className="py-3 px-4">Yönetici</th>
+              <th className="py-3 px-4">Yapılan İşlem</th>
+              <th className="py-3 px-4">Detaylar</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5 text-gray-300">
+            {logs.map(log => (
+              <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
+                <td className="py-3.5 px-4 font-mono text-gray-400">
+                  {formatDate(log.createdAt)}
+                </td>
+                <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[10px] text-emerald-400 font-extrabold uppercase">
+                    {(log.admin || 'A')[0]}
+                  </div>
+                  <span>{log.admin}</span>
+                </td>
+                <td className="py-3.5 px-4">
+                  <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] border ${
+                    log.action.includes('Güncelle') || log.action.includes('Kural')
+                      ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                      : log.action.includes('Sil')
+                        ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  }`}>
+                    {log.action}
+                  </span>
+                </td>
+                <td className="py-3.5 px-4 text-slate-400 max-w-sm truncate" title={log.details}>
+                  {log.details || '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
