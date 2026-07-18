@@ -2130,3 +2130,172 @@ function BlogManagementList({ blogs, onDelete, onAddClick, onEditClick, onDuplic
     </div>
   );
 }
+
+function PricingRulesEditor({ pricingRules, setPricingRules, onSave, saving }) {
+  const handleChange = (field, val) => {
+    setPricingRules(prev => ({
+      ...prev,
+      [field]: val
+    }));
+  };
+
+  return (
+    <div className="bg-[#0b1220] border border-white/10 rounded-3xl p-6 text-left animate-in fade-in duration-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-5">
+        <div>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Banknote className="h-5 w-5 text-emerald-450" /> Fiyat ve Rasyon Kural Parametreleri
+          </h3>
+          <p className="text-xs text-gray-400">
+            Sitedeki teklif formu, nakliye/lojistik maliyetleri ve ROI tasarruf hesaplayıcılarının kullandığı parametreleri güncelleyin.
+          </p>
+        </div>
+        <button
+          onClick={onSave}
+          disabled={saving}
+          className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-black px-6 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]"
+        >
+          {saving ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Kaydediliyor...</>
+          ) : (
+            <><Check className="h-4 w-4" /> Değişiklikleri Kaydet</>
+          )}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Grup 1: Ürün Fiyatları */}
+        <div className="space-y-4 bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+          <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Package className="h-4 w-4" /> Ürün Fiyatları
+          </h4>
+          
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Dökme Mısır Silajı Fiyatı (₺/Ton)</label>
+            <input 
+              type="number"
+              value={pricingRules.baseProductPrice ?? 5500}
+              onChange={(e) => handleChange('baseProductPrice', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Sitedeki dökme mısır silajı ton bazlı hesaplama fiyatıdır.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Vakumlu Balyalı Paket Fiyatı (₺/Kg)</label>
+            <input 
+              type="number"
+              step="0.1"
+              value={pricingRules.silagePrice ?? 5.5}
+              onChange={(e) => handleChange('silagePrice', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">1000 kg ve 500 kg vakumlu balyalı ürünler için birim fiyat.</p>
+          </div>
+        </div>
+
+        {/* Grup 2: Lojistik & Nakliye */}
+        <div className="space-y-4 bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+          <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <MapPin className="h-4 w-4" /> Lojistik & Sevk Maliyetleri
+          </h4>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Minimum Sevk Ücreti (₺)</label>
+            <input 
+              type="number"
+              value={pricingRules.shippingMinFee ?? 4000}
+              onChange={(e) => handleChange('shippingMinFee', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Sevk edilen en yakın mesafe için taban/minimum nakliye bedeli.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Km Başına Taşıma Ücreti (₺/Km)</label>
+            <input 
+              type="number"
+              step="0.01"
+              value={pricingRules.shippingPerKm ?? 2.2}
+              onChange={(e) => handleChange('shippingPerKm', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Fabrikadan teslim yerine olan mesafe (km) çarpan katsayısı.</p>
+          </div>
+        </div>
+
+        {/* Grup 3: ROI ve Süt Verim Rasyon Parametreleri */}
+        <div className="space-y-4 bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+          <h4 className="text-xs font-bold text-yellow-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4" /> Rasyon & Tasarruf Oranları
+          </h4>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Çiğ Süt Satış Fiyatı (₺/Litre)</label>
+            <input 
+              type="number"
+              step="0.1"
+              value={pricingRules.milkPrice ?? 15}
+              onChange={(e) => handleChange('milkPrice', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Çiftçinin çiğ sütü sattığı güncel litre fiyatı.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Günlük Ek Süt Artışı (Litre/İnek)</label>
+            <input 
+              type="number"
+              step="0.1"
+              value={pricingRules.milkIncreasePerCow ?? 2.5}
+              onChange={(e) => handleChange('milkIncreasePerCow', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Silaj beslemesine geçildiğinde inek başı günlük beklenen süt artışı.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Konsantre Yem Azalma Oranı (Ondalık)</label>
+            <input 
+              type="number"
+              step="0.01"
+              value={pricingRules.concentrateReduction ?? 0.3}
+              onChange={(e) => handleChange('concentrateReduction', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Örn: 0.30 girilirse silajla rasyondaki fabrika yemi tüketimini %30 azaltır.</p>
+          </div>
+        </div>
+
+        {/* Diğer Giderler */}
+        <div className="space-y-4 bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+          <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <TrendingUp className="h-4 w-4" /> Yem Birim Maliyetleri
+          </h4>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Konsantre Yem Fiyatı (₺/Kg)</label>
+            <input 
+              type="number"
+              value={pricingRules.concentrateCost ?? 120}
+              onChange={(e) => handleChange('concentrateCost', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Rasyondaki hazır konsantre/fabrika yeminin kg fiyatı.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Diğer Kaba Yem Fiyatı (₺/Kg)</label>
+            <input 
+              type="number"
+              value={pricingRules.forageCost ?? 60}
+              onChange={(e) => handleChange('forageCost', Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070b14] text-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Yonca, saman veya diğer kaba yemlerin ortalama kg fiyatı.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
