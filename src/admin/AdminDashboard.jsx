@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import {
   collection, query, orderBy, onSnapshot,
-  doc, updateDoc, deleteDoc, writeBatch, addDoc, serverTimestamp,
+  doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, addDoc, serverTimestamp,
 } from 'firebase/firestore';
 import {
   LogOut, Package, MessageSquare, TrendingUp, Bell,
@@ -12,7 +12,19 @@ import {
   Activity, Radio, Zap, Satellite, Star, Plus, X, Check,
   BookOpen, FileText, Copy, Sparkles, Globe
 } from 'lucide-react';
-import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION, COMPANIES_COLLECTION, BLOGS_COLLECTION } from '../firebase';
+import { auth, db, ORDERS_COLLECTION, MESSAGES_COLLECTION, TESTIMONIALS_COLLECTION, COMPANIES_COLLECTION, BLOGS_COLLECTION, PRICING_RULES_COLLECTION } from '../firebase';
+
+const DEFAULT_PRICES = {
+  baseProductPrice: 5500,      // ₺/ton
+  shippingMinFee: 4000,        // ₺
+  shippingPerKm: 2.2,          // ₺ per ton per km
+  concentrateCost: 120,        // ₺
+  forageCost: 60,              // ₺
+  silagePrice: 5.5,            // ₺/kg
+  milkPrice: 15,               // ₺/liter
+  milkIncreasePerCow: 2.5,     // liters/day
+  concentrateReduction: 0.30   // 30% reduction with silage
+};
 import { initialBlogs } from '../data/initialBlogs';
 import DashboardCharts from './DashboardCharts';
 import OrderDetailModal from './OrderDetailModal';
@@ -132,8 +144,31 @@ export default function AdminDashboard({ user }) {
   const [editingStockVal, setEditingStockVal] = useState(0);
   const [savingStock, setSavingStock] = useState(false);
 
+  // Pricing Rules editor state
+  const [pricingRules, setPricingRules] = useState(DEFAULT_PRICES);
+  const [loadingPricing, setLoadingPricing] = useState(false);
+  const [savingPricing, setSavingPricing] = useState(false);
+
   const firstOrdersLoad = useRef(true);
   const firstMessagesLoad = useRef(true);
+
+  // Load pricing rules when pricing tab is selected
+  useEffect(() => {
+    const fetchPricingRules = async () => {
+      setLoadingPricing(true);
+      try {
+        const pricingDoc = await getDoc(doc(db, PRICING_RULES_COLLECTION, 'current'));
+        if (pricingDoc.exists()) {
+          setPricingRules(pricingDoc.data());
+        }
+      } catch (err) {
+        console.error('Error fetching pricing rules in admin:', err);
+      } finally {
+        setLoadingPricing(false);
+      }
+    };
+    if (db && tab === 'pricing') fetchPricingRules();
+  }, [tab]);
 
   // Canlı saat (komuta merkezi hissi + göreli zamanların tazelenmesi).
   useEffect(() => {
@@ -543,44 +578,116 @@ export default function AdminDashboard({ user }) {
     if (!title) return;
     setAiGenerating(true);
     
-    // Simulate AI loading delay
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 1200));
     
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const titleLower = title.toLowerCase();
     
-    const generatedContent = `
-      <h3>${title}</h3>
-      <p>Bu makale Demircan Silaj yapay zekâ sistemi tarafından otomatik olarak üretilmiştir. Hayvancılıkta verimliliği artırmak ve rasyon maliyetlerini düşürmek için bilimsel analizlere dayalı besleme yapılması gerekmektedir.</p>
-      
-      <h3>1. Temel Besleme Prensipleri</h3>
-      <p>Büyükbaş ve küçükbaş hayvanların günlük protein, enerji ve kuru madde ihtiyaçları dengeli bir rasyonla karşılanmalıdır. Özellikle kaliteli kaba yem (mısır silajı ve yonca kuru otu) kullanımı işkembe (rumen) sağlığı ve genel döl verimliliği için elzemdir.</p>
-      
-      <h3>2. Rasyon Kalitesi</h3>
-      <p>Doğru nem oranına sahip (%30-35 Kuru Madde) mısır silajı yüksek sindirilebilirlik sunarak günlük canlı ağırlık kazancını ve süt verimini önemli ölçüde artırır. Oksijen ile temasın kesilmesi (vakumlu balyalama) silajın aerobik stabilitesini koruyarak toksin ve küflenme riskini sıfırlar.</p>
-    `;
+    let generatedContent = '';
+    let category = 'Büyükbaş';
+    let tags = 'silaj, besleme, rasyon';
+    let excerpt = '';
     
-    const generatedBlog = {
+    if (titleLower.includes('mısır') || titleLower.includes('misir')) {
+      category = 'Silaj';
+      tags = 'mısırsılajı, kabayem, besleme, fermantasyon';
+      excerpt = 'Premium mısır silajının ideal kuru madde oranı, koçan olgunluğu, pH dengesi ve rasyon verimliliğine etkilerini detaylıca inceleyen teknik rehber.';
+      generatedContent = `
+        <h3>Mısır Silajında Kalite ve Verim Kriterleri</h3>
+        <p>Mısır silajı, yüksek enerjili kaba yem ihtiyacının karşılanmasında modern hayvancılık işletmelerinin en büyük yardımcısıdır. Ancak mısır silajının hayvansal verime (süt ve et performansı) maksimum katkı sağlayabilmesi için belirli kalite kriterlerine sahip olması gerekir.</p>
+        
+        <h4>1. İdeal Kuru Madde (KM) Oranı</h4>
+        <p>Mısır silajı biçilirken kuru madde oranının <strong>%30-35</strong> (nem oranının %65-70) aralığında olması hedeflenmelidir. Kuru maddenin %30'un altında olması durumunda, silajda aşırı ekşime (bütirik asit oluşumu) ve besin değeri yüksek sızıntı suyu kayıpları yaşanır. %35'in üzerindeki kuru maddede ise yemin sıkıştırılması zorlaşır, oksijen cepleri kalır ve küflenme riski artar.</p>
+        
+        <h4>2. Koçan Olgunluğu ve Nişasta Değeri</h4>
+        <p>Mısır silajındaki enerjinin ana kaynağı danelerdeki nişastadır. Optimum hasat zamanı, danelerdeki süt çizgisinin 1/2 ila 2/3 seviyesine geldiği dönemdir. Bu aşamada biçilen mısır, kuru maddede %28-35 oranında nişasta içerir ve dane kırıcı (kernel processor) kullanılarak parçalanmalıdır.</p>
+        
+        <h4>3. Vakumlu Paketlemenin Önemi</h4>
+        <p>Vakumlu rulo paketleme teknolojisi, biçilen yemin hava ile temasını anında keserek anaerobik ortam sağlar. Bu durum fermantasyonun (pH 3.8-4.1) hızla tamamlanmasını sağlar ve küflenme ile kızışma riskini sıfıra indirerek yemin 24 ay boyunca taze kalmasını garanti eder.</p>
+      `;
+    } else if (titleLower.includes('rasyon') || titleLower.includes('tmr') || titleLower.includes('yem')) {
+      category = 'Besicilik';
+      tags = 'rasyon, tmr, yemtasarrufu, buyukbas';
+      excerpt = 'Yüksek kaliteli mısır silajı kullanarak rasyondaki konsantre yem ihtiyacını azaltma ve toplam yem maliyetlerini düşürme stratejileri.';
+      generatedContent = `
+        <h3>Rasyon Maliyetini Düşürmede Kaliteli Kaba Yem Kullanımı</h3>
+        <p>Modern süt ve besi hayvancılığında işletme giderlerinin %70'inden fazlasını yem maliyetleri oluşturmaktadır. Bu giderlerin büyük bölümü ise fabrika (konsantre) yemlerinden kaynaklanır. Kaliteli mısır silajı kullanarak TMR (Toplam Karışım Rasyon) maliyetlerini düşürmek mümkündür.</p>
+        
+        <h4>1. Konsantre Yem İkamesi</h4>
+        <p>İdeal fermente olmuş, yüksek nişastalı (%30 üzeri) ve sindirilebilir lif (NDF/ADF) yapısına sahip premium mısır silajları, rasyondaki enerjiyi doğal yollarla karşılar. Rasyona dahil edilen her 1 kg kaliteli silaj, fabrika yemi ihtiyacını azaltarak toplam rasyon maliyetinde %20-30 oranında tasarruf sağlar.</p>
+        
+        <h4>2. Rumen Sağlığı ve Asidoz Önleme</h4>
+        <p>Sadece konsantre yemle beslenen hayvanlarda işkembe asitliği (pH) tehlikeli seviyelere düşer ve subklinik asidoz gelişir. Kaliteli kaba yemlerin TMR olarak homojen şekilde sunulması geviş getirmeyi uyarır, tükürük salgısını artırır ve rumen pH'ını dengeler.</p>
+        
+        <h4>3. Yem Çevrim Oranını İyileştirme</h4>
+        <p>Sindirilebilirliği %72-75 aralığında olan vakumlu silajlar, hayvanın sindirim sistemini yormaz. Yemden yararlanma oranını maksimize eder.</p>
+      `;
+    } else if (titleLower.includes('ph') || titleLower.includes('fermantasyon') || titleLower.includes('bozulma')) {
+      category = 'Hayvan Sağlığı';
+      tags = 'fermantasyon, ph, silajanalizi, aflatoksin';
+      excerpt = 'Silaj fermantasyon kimyası, pH kararlılığı ve yemin açıldıktan sonra bozulmasını (aerobik kararsızlık) engelleme yöntemleri.';
+      generatedContent = `
+        <h3>Silajda Fermantasyon Kalitesi ve pH Kararlılığı</h3>
+        <p>Silaj yapımı, özünde yeşil yemlerin laktik asit bakterileri tarafından fermente edilerek korunması (turşulaştırılması) işlemidir. Fermantasyonun başarısı, silajın besin değerini ve hayvana yedirilebilirliğini belirler.</p>
+        
+        <h4>1. pH Düşüş Hızı</h4>
+        <p>Hasat edilip sıkıştırılan silajda oksijen tükendiğinde laktik asit bakterileri çoğalmaya başlar ve ortamdaki şekerleri laktik aside çevirir. Bu asit oluşumu pH seviyesini hızlıca <strong>3.8 - 4.1</strong> aralığına indirmelidir. Hızlı pH düşüşü, bütirik asit üreten zararlı Clostridium bakterilerinin üremesini engeller.</p>
+        
+        <h4>2. Küf ve Aflatoksin Riskleri</h4>
+        <p>Sıkıştırmanın yetersiz yapıldığı veya ambalajın zarar görüp hava aldığı durumlarda aerobik mantarlar ve küfler çoğalır. Bu küfler, süt yoluyla insanlara da geçebilen ve kanserojen olan <strong>aflatoksin</strong> birikimine yol açar. Vakumlu koruma bu riski tamamen ortadan kaldırır.</p>
+        
+        <h4>3. Kaliteli Fermantasyon Belirtileri</h4>
+        <p>Başarılı fermente olmuş kaliteli bir silaj, zeytin yeşili/sarımtırak renge ve hafif ekşi, meyvemsi, hoş bir kokuya sahiptir. Siyahlaşmış, çamurlu renk ve ağır gübre kokusu (bütirik asit) fermantasyon başarısızlığını gösterir.</p>
+      `;
+    } else {
+      category = 'Silaj';
+      tags = 'silaj, kabayem, tarim, hayvancilik';
+      excerpt = `${title} konusu hakkında kaba yem rasyon verimliliği, modern paketleme teknikleri ve hayvancılık sektörü analizleri rehberi.`;
+      generatedContent = `
+        <h3>${title} Hakkında Teknik Değerlendirmeler</h3>
+        <p>Demircan Silaj Ar-Ge birimi tarafından hazırlanan bu teknik rehberde, ${title} konusunun modern tarım ve hayvancılık işletmeleri için önemi ele alınmaktadır. Hayvan beslemede kaba yem kalitesi, doğrudan verim artışı ve rasyon tasarrufu ile ilişkilidir.</p>
+        
+        <h4>1. Bilimsel Besleme Standartları</h4>
+        <p>Yüksek süt verimi ve besi performansı için rasyonların protein, nişasta ve lif oranlarının dengelenmesi gerekir. Bu dengelemede kullanılan kaba yemlerin sindirilebilirlik oranları, hayvanın yemden yararlanma başarısını belirleyen en temel etkendir.</p>
+        
+        <h4>2. Kalite ve Analizlerin Önemi</h4>
+        <p>Çiftliklerde kullanılan kaba yemlerin laboratuvar analizlerinin yapılması ve NDF, ADF, pH değerlerinin bilinmesi rasyonun doğru ayarlanmasını sağlar. Vakumlu paketleme, bu değerlerin 24 ay boyunca hiç kaybolmadan korunmasına yardımcı olur.</p>
+      `;
+    }
+    
+    setAiGenerating(false);
+    return {
       title,
       slug,
-      category: 'Büyükbaş',
-      excerpt: `${title} hakkında yapay zekâ destekli rehber. Doğru yem rasyonu, bakım koşulları ve verim analizlerini içerir.`,
+      category,
+      excerpt,
       content: generatedContent,
-      coverImage: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?q=80&w=800&auto=format&fit=crop',
-      tags: 'yapayzeka, besleme, rasyon, hayvancilik',
-      seoTitle: `${title} | Demircan Silaj Bilgi Bankası`,
-      seoDescription: `${title} konusunda en güncel besleme programları, modern rasyon içerikleri ve hayvancılık teknikleri.`,
+      coverImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop',
+      tags,
+      seoTitle: `${title} | Demircan Silaj Bilgi Merkezi`,
+      seoDescription: `${title} hakkında bilimsel rasyon verileri ve modern kaba yem depolama rehberi.`,
       author: 'Demircan AI Yazarı',
       status: 'published'
     };
-    
-    setAiGenerating(false);
-    return generatedBlog;
   };
 
   const removeDoc = async (coll, id) => {
     if (!window.confirm('Bu kaydı kalıcı olarak silmek istediğinize emin misiniz?')) return;
     try { await deleteDoc(doc(db, coll, id)); }
     catch (err) { console.error(err); }
+  };
+
+  const handleSavePricingRules = async () => {
+    setSavingPricing(true);
+    try {
+      await setDoc(doc(db, PRICING_RULES_COLLECTION, 'current'), pricingRules);
+      alert('Fiyat ve kural parametreleri başarıyla güncellendi! Sitedeki tüm hesaplama araçları yeni fiyatları kullanacaktır.');
+    } catch (err) {
+      console.error('Error saving pricing rules:', err);
+      alert('HATA: Fiyat güncellenemedi. Lütfen yetkinizi kontrol edin.');
+    } finally {
+      setSavingPricing(false);
+    }
   };
 
   const markAllMessagesRead = async () => {
@@ -725,6 +832,12 @@ export default function AdminDashboard({ user }) {
               <BookOpen className="h-4 w-4" /> Blog Yönetimi
             </button>
             <button
+              onClick={() => setTab('pricing')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'pricing' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
+            >
+              <Banknote className="h-4 w-4" /> Fiyat Kuralları
+            </button>
+            <button
               onClick={() => setTab('analytics')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'analytics' ? 'bg-emerald-500 text-[#06110c] shadow-[0_0_20px_-6px_rgba(16,185,129,0.8)]' : 'text-gray-400 hover:text-white'}`}
             >
@@ -847,6 +960,19 @@ export default function AdminDashboard({ user }) {
             onDuplicateClick={handleDuplicateBlog}
             savingBlog={savingBlog}
           />
+        ) : tab === 'pricing' ? (
+          loadingPricing ? (
+            <div className="flex items-center justify-center py-24 text-gray-500">
+              <Loader2 className="h-6 w-6 animate-spin mr-3" /> Fiyat kuralları alınıyor...
+            </div>
+          ) : (
+            <PricingRulesEditor 
+              pricingRules={pricingRules} 
+              setPricingRules={setPricingRules} 
+              onSave={handleSavePricingRules} 
+              saving={savingPricing} 
+            />
+          )
         ) : (
           <div className="space-y-6">
             {orders.length > 0 ? (
