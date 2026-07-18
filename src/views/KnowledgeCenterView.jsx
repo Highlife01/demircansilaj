@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Star, CheckCircle, ChevronRight } from 'lucide-react';
+import { Star, CheckCircle, ChevronRight, BookOpen, Award } from 'lucide-react';
 
-export default function KnowledgeCenterView({ t, lang }) {
+export default function KnowledgeCenterView({ t, lang, navigateTo }) {
   const [openAiFaq, setOpenAiFaq] = useState(null);
   const toggleAiFaq = (idx) => setOpenAiFaq(openAiFaq === idx ? null : idx);
 
@@ -10,7 +10,7 @@ export default function KnowledgeCenterView({ t, lang }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Card */}
-        <div className="bg-gradient-to-br from-green-950 via-green-900 to-gray-900 rounded-3xl p-8 md:p-14 text-white mb-16 shadow-xl border border-green-900/20 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-green-950 via-green-900 to-gray-900 rounded-3xl p-8 md:p-14 text-white mb-12 shadow-xl border border-green-900/20 relative overflow-hidden">
           <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-green-500/10 rounded-full blur-3xl"></div>
           <div className="relative z-10 max-w-4xl">
             <span className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-400/10 border border-green-400/20 text-green-300 text-xs font-semibold tracking-wide mb-6">
@@ -22,6 +22,45 @@ export default function KnowledgeCenterView({ t, lang }) {
             <p className="text-sm md:text-base text-gray-300 font-light leading-relaxed max-w-3xl">
               {t('knowledgePage.subtitle')}
             </p>
+          </div>
+        </div>
+
+        {/* Navigation Cards for Ansiklopedi & Akademi */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-150 shadow-sm flex items-start gap-4 hover:border-green-300 transition-all group">
+            <div className="bg-green-50 text-green-700 p-3.5 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <div className="space-y-2 flex-1">
+              <h3 className="font-bold text-gray-900 text-lg">Silaj Ansiklopedisi</h3>
+              <p className="text-xs text-gray-500 leading-relaxed font-light">
+                Nişasta, pH, NDF, Kuru Madde gibi tüm teknik analiz değerlerini ve kaba yem türlerinin bilimsel tanımlarını içeren sözlük portalımız.
+              </p>
+              <button 
+                onClick={() => navigateTo('/bilgi-merkezi/ansiklopedi')}
+                className="inline-flex items-center gap-1 text-xs text-green-750 font-bold hover:text-green-600 cursor-pointer pt-2 group-hover:translate-x-0.5 transition-all"
+              >
+                Sözlüğü İncele <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-150 shadow-sm flex items-start gap-4 hover:border-green-300 transition-all group">
+            <div className="bg-emerald-50 text-emerald-700 p-3.5 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <Award className="h-6 w-6" />
+            </div>
+            <div className="space-y-2 flex-1">
+              <h3 className="font-bold text-gray-900 text-lg">Silaj Akademisi (Üniversitesi)</h3>
+              <p className="text-xs text-gray-500 leading-relaxed font-light">
+                Hasat zamanı, rasyon tasarrufları ve fermantasyon süreçlerine dair ücretsiz eğitimlerimizi alın, bölüm sonu testleriyle sertifikanızı kazanın.
+              </p>
+              <button 
+                onClick={() => navigateTo('/bilgi-merkezi/akademi')}
+                className="inline-flex items-center gap-1 text-xs text-emerald-750 font-bold hover:text-emerald-600 cursor-pointer pt-2 group-hover:translate-x-0.5 transition-all"
+              >
+                Eğitimlere Başla <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
 

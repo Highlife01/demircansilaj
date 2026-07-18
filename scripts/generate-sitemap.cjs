@@ -15,6 +15,39 @@ const provinces = [
   "yalova", "yozgat", "zonguldak"
 ];
 
+const districts = [
+  { id: "seyhan", provinceId: "adana" },
+  { id: "karaisali", provinceId: "adana" },
+  { id: "kozan", provinceId: "adana" },
+  { id: "ceyhan", provinceId: "adana" },
+  { id: "yuregir", provinceId: "adana" },
+  { id: "karatay", provinceId: "konya" },
+  { id: "meram", provinceId: "konya" },
+  { id: "selcuklu", provinceId: "konya" },
+  { id: "eregli", provinceId: "konya" },
+  { id: "aksehir", provinceId: "konya" },
+  { id: "odemis", provinceId: "izmir" },
+  { id: "tire", provinceId: "izmir" },
+  { id: "torbali", provinceId: "izmir" },
+  { id: "bergama", provinceId: "izmir" },
+  { id: "altieylul", provinceId: "balikesir" },
+  { id: "karesi", provinceId: "balikesir" },
+  { id: "bandirma", provinceId: "balikesir" },
+  { id: "gonen", provinceId: "balikesir" },
+  { id: "yakutiye", provinceId: "erzurum" },
+  { id: "palandoken", provinceId: "erzurum" },
+  { id: "aziziye", provinceId: "erzurum" },
+  { id: "oltu", provinceId: "erzurum" }
+];
+
+const encyclopediaSlugs = [
+  "silaj", "misir-silaji", "yonca-silaji", "ph", "kuru-madde", "ndf", "adf", "tmr", "nisasta"
+];
+
+const academyCourses = [
+  "temel-silaj", "rasyon-yonetimi", "biyofermantasyon"
+];
+
 const domain = "https://www.demircansilaj.com.tr";
 
 let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -49,13 +82,51 @@ let xml = `<?xml version="1.0" encoding="UTF-8"?>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>${domain}/bilgi-merkezi/ansiklopedi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${domain}/bilgi-merkezi/akademi</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 `;
 
+// Encyclopedia Terms
+encyclopediaSlugs.forEach(slug => {
+  xml += `  <url>
+    <loc>${domain}/bilgi-merkezi/ansiklopedi/${slug}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>\n`;
+});
+
+// Academy Courses
+academyCourses.forEach(course => {
+  xml += `  <url>
+    <loc>${domain}/bilgi-merkezi/akademi/${course}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>\n`;
+});
+
+// Provinces
 provinces.forEach(p => {
   xml += `  <url>
     <loc>${domain}/il/${p}-misir-silaji</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>\n`;
+});
+
+// Districts
+districts.forEach(d => {
+  xml += `  <url>
+    <loc>${domain}/il/${d.provinceId}/${d.id}-misir-silaji</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>\n`;
 });
 

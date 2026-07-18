@@ -4,6 +4,7 @@ import {
   Phone, Mail, MapPin
 } from 'lucide-react';
 import { provinces } from './data/provinces.js';
+import { districts } from './data/districts.js';
 import { translations } from './data/translations.js';
 
 // Lazy load view components to avoid loading their code and dependencies (e.g. Firebase) on initial paint
@@ -13,7 +14,10 @@ const QualityView = lazy(() => import('./views/QualityView.jsx'));
 const ContactView = lazy(() => import('./views/ContactView.jsx'));
 const CalculatorsView = lazy(() => import('./views/CalculatorsView.jsx'));
 const KnowledgeCenterView = lazy(() => import('./views/KnowledgeCenterView.jsx'));
+const EncyclopediaView = lazy(() => import('./views/EncyclopediaView.jsx'));
+const AcademyView = lazy(() => import('./views/AcademyView.jsx'));
 const ProvinceView = lazy(() => import('./views/ProvinceView.jsx'));
+const DistrictView = lazy(() => import('./views/DistrictView.jsx'));
 const BlogView = lazy(() => import('./views/BlogView.jsx'));
 
 const galleryItems = [
@@ -33,7 +37,9 @@ const galleryItems = [
   { type: 'video', src: '/media/12.mp4', title: 'Gece Operasyonu', desc: 'Kesintisiz hasat ve yükleme çalışmalarımız.' },
   { type: 'video', src: '/media/14.mp4', title: 'Büyük Ölçekli Lojistik', desc: 'Kendi araç filomuzla tonajlı kaba yem tedarik sevkiyatları.' },
   { type: 'video', src: '/media/WhatsApp Video 2026-07-13 at 11.18.12.mp4', title: 'Üretim Tesislerimiz', desc: 'Modern makine parkurumuz ve üretim sahamız.' },
-  { type: 'video', src: '/media/WhatsApp Video 2026-07-13 at 11.18.50.mp4', title: 'Paket Çıkışı', desc: 'Sargıdan çıkan rulo mısır silajının son kontrolü.' }
+  { type: 'video', src: '/media/WhatsApp Video 2026-07-13 at 11.18.50.mp4', title: 'Paket Çıkışı', desc: 'Sargıdan çıkan rulo mısır silajının son kontrolü.' },
+  { type: 'video', src: '/media/17.mp4', title: 'Tarlada Hasat Süreci', desc: 'Hasat makinelerimizin tarlada silajlık mısırları biçmesi ve taşıma kamyonlarına yüklemesi.' },
+  { type: 'video', src: '/media/18.mp4', title: 'Olgunlaşmış Mısır Koçanları', desc: 'Hasat öncesi tarladaki mısır koçanlarının ve bitki gelişiminin son kontrolleri.' }
 ];
 
 const PageLoader = () => (
@@ -189,7 +195,7 @@ export default function App() {
     if (currentPath === '/kalite-ve-uretim') return 'quality';
     if (currentPath === '/iletisim-ve-siparis') return 'contact';
     if (currentPath === '/hesaplama-araclari') return 'calculators';
-    if (currentPath === '/bilgi-merkezi') return 'knowledge';
+    if (currentPath === '/bilgi-merkezi' || currentPath.startsWith('/bilgi-merkezi/')) return 'knowledge';
     if (currentPath === '/blog' || currentPath.startsWith('/blog/')) return 'blog';
     if (currentPath.startsWith('/il/')) return 'quality';
     return 'home';
@@ -538,6 +544,19 @@ export default function App() {
             <KnowledgeCenterView 
               t={t}
               lang={lang}
+              navigateTo={navigateTo}
+            />
+          )}
+          {currentPath.startsWith('/bilgi-merkezi/ansiklopedi') && (
+            <EncyclopediaView 
+              t={t}
+              lang={lang}
+            />
+          )}
+          {currentPath.startsWith('/bilgi-merkezi/akademi') && (
+            <AcademyView 
+              t={t}
+              lang={lang}
             />
           )}
           {(currentPath === '/blog' || currentPath.startsWith('/blog/')) && (
@@ -552,11 +571,28 @@ export default function App() {
           )}
           {currentPath.startsWith('/il/') && (
             (() => {
-              const match = currentPath.match(/^\/il\/([a-z0-9-]+)-misir-silaji$/);
-              if (match) {
+              const matchDistrict = currentPath.match(/^\/il\/([a-z0-9-]+)\/([a-z0-9-]+)-misir-silaji$/);
+              if (matchDistrict) {
+                return (
+                  <DistrictView 
+                    provinceId={matchDistrict[1]}
+                    districtId={matchDistrict[2]}
+                    provinces={provinces}
+                    districts={districts}
+                    lang={lang}
+                    t={t}
+                    navigateTo={navigateTo}
+                    setFormData={setFormData}
+                    formData={formData}
+                    setSelectedProvId={setSelectedProvId}
+                  />
+                );
+              }
+              const matchProvince = currentPath.match(/^\/il\/([a-z0-9-]+)-misir-silaji$/);
+              if (matchProvince) {
                 return (
                   <ProvinceView 
-                    provinceId={match[1]}
+                    provinceId={matchProvince[1]}
                     provinces={provinces}
                     lang={lang}
                     t={t}
